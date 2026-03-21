@@ -28,6 +28,11 @@
       url = "github:openclaw/nix-openclaw";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -43,6 +48,7 @@
     in
     {
       clanModules.linkding = ./services/linkding;
+      clanModules.microvm = ./services/microvm;
 
       nixosModules.agentplot = import ./modules/agentplot.nix;
       darwinModules.agentplot = import ./modules/agentplot.nix;
