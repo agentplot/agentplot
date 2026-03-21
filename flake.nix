@@ -33,10 +33,15 @@
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    qmd = {
+      url = "github:tobi/qmd";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { self, nixpkgs, ... }:
+    { self, nixpkgs, agent-skills-nix, ... }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -49,9 +54,21 @@
     {
       clan.modules.linkding = ./services/linkding;
       clan.modules.microvm = ./services/microvm;
+      clan.modules.gno = ./services/gno;
+      clan.modules.qmd = ./services/qmd;
+      clan.modules.subcog = ./services/subcog;
+      clan.modules.ogham-mcp = ./services/ogham-mcp;
 
-      nixosModules.agentplot = import ./modules/agentplot.nix;
-      darwinModules.agentplot = import ./modules/agentplot.nix;
+      nixosModules.agentplot = {
+        imports = [ ./modules/agentplot.nix ];
+        agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
+      };
+      nixosModules.oidc = import ./modules/oidc.nix;
+      darwinModules.agentplot = {
+        imports = [ ./modules/agentplot.nix ];
+        agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
+      };
+      darwinModules.oidc = import ./modules/oidc.nix;
 
       packages = forAllSystems (
         system:
