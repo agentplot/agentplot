@@ -283,6 +283,9 @@
                     files."token" = {
                       secret = true;
                     };
+                    script = ''
+                      cp "$prompts/token" "$out/token"
+                    '';
                   };
                 };
 
