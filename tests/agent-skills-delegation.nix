@@ -110,6 +110,9 @@ let
 
 in
 
+# ── Module enabled ─────────────────────────────────────────────────────────
+assert cfg.programs.agent-skills.enable == true;
+
 # ── Source registration ────────────────────────────────────────────────────
 assert src.path != null;
 
