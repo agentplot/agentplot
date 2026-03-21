@@ -1,21 +1,47 @@
-# Smoke test: verify two mock clanServices both writing to agentplot.hmModules compose without conflict.
+# Smoke test: verify clanServices compose via agentplot.hmModules and claude-tools delegation merges correctly.
 # Run: nix-instantiate --eval tests/hmModules-composition.nix
 let
   pkgs = import <nixpkgs> { };
   lib = pkgs.lib;
 
-  # Evaluate the adapter module with two mock HM modules
-  eval = lib.evalModules {
+  # ── Stub: programs.claude-tools option definition ──────────────────────────
+  claudeToolsOptions = { lib, ... }: {
+    options.programs.claude-tools = {
+      skills-installer.skillsByClient = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = { };
+        description = "Stub: skills registered per target per client name";
+      };
+    };
+  };
+
+  # ── Mock HM modules (simulating what linkding client role generates) ───────
+
+  # Client 1: linkding (claude-tools enabled)
+  linkdingPersonalHM = { ... }: {
+    programs.git.enable = true;
+    programs.claude-tools.skills-installer.skillsByClient.claude-code.linkding = "symlink";
+  };
+
+  # Client 2: linkding-biz (claude-tools enabled)
+  linkdingBizHM = { ... }: {
+    programs.claude-tools.skills-installer.skillsByClient.claude-code.linkding-biz = "symlink";
+  };
+
+  # Client 3: from a different clanService (paperless)
+  paperlessHM = { ... }: {
+    programs.bash.enable = true;
+    programs.claude-tools.skills-installer.skillsByClient.claude-code.paperless = "symlink";
+  };
+
+  # ── Part 1: Adapter-level accumulation test ────────────────────────────────
+  adapterEval = lib.evalModules {
     modules = [
       ../modules/agentplot.nix
       {
-        # Simulate two clanServices writing to hmModules
-        config.agentplot.hmModules.linkding-personal = {
-          programs.git.enable = true;
-        };
-        config.agentplot.hmModules.paperless-default = {
-          programs.bash.enable = true;
-        };
+        config.agentplot.hmModules.linkding-personal = linkdingPersonalHM;
+        config.agentplot.hmModules.linkding-biz = linkdingBizHM;
+        config.agentplot.hmModules.paperless-default = paperlessHM;
         config.agentplot.user = "testuser";
       }
       # Stub home-manager.users to avoid needing actual HM
@@ -33,11 +59,43 @@ let
     ];
   };
 
-  cfg = eval.config;
+  adapterCfg = adapterEval.config;
+
+  # ── Part 2: HM-level composition test (evaluate merged modules) ────────────
+  hmEval = lib.evalModules {
+    modules = [
+      claudeToolsOptions
+      linkdingPersonalHM
+      linkdingBizHM
+      paperlessHM
+      # Stub options consumed by mock modules
+      {
+        options.programs.git.enable = lib.mkOption { type = lib.types.bool; default = false; };
+        options.programs.bash.enable = lib.mkOption { type = lib.types.bool; default = false; };
+      }
+    ];
+  };
+
+  skillsByClient = hmEval.config.programs.claude-tools.skills-installer.skillsByClient;
+
 in
-assert cfg.agentplot.user == "testuser";
-assert builtins.length (builtins.attrNames cfg.agentplot.hmModules) == 2;
-assert builtins.hasAttr "linkding-personal" cfg.agentplot.hmModules;
-assert builtins.hasAttr "paperless-default" cfg.agentplot.hmModules;
-assert builtins.hasAttr "testuser" cfg.home-manager.users;
-"PASS: hmModules composition smoke test — two services compose without conflict"
+
+# ── Adapter assertions ──────────────────────────────────────────────────────
+assert adapterCfg.agentplot.user == "testuser";
+assert builtins.length (builtins.attrNames adapterCfg.agentplot.hmModules) == 3;
+assert builtins.hasAttr "linkding-personal" adapterCfg.agentplot.hmModules;
+assert builtins.hasAttr "linkding-biz" adapterCfg.agentplot.hmModules;
+assert builtins.hasAttr "paperless-default" adapterCfg.agentplot.hmModules;
+assert builtins.hasAttr "testuser" adapterCfg.home-manager.users;
+
+# ── Single-client delegation ────────────────────────────────────────────────
+assert skillsByClient.claude-code.linkding == "symlink";
+
+# ── Multi-client merge (two linkding clients) ──────────────────────────────
+assert skillsByClient.claude-code.linkding-biz == "symlink";
+
+# ── Cross-service merge (linkding + paperless) ─────────────────────────────
+assert skillsByClient.claude-code.paperless == "symlink";
+assert builtins.length (builtins.attrNames skillsByClient.claude-code) == 3;
+
+"PASS: hmModules composition + claude-tools delegation — single-client, multi-client, cross-service merge"
