@@ -1,0 +1,23 @@
+schema: spec-driven
+
+context: |
+  AgentPlot: agent-optimized clanServices built on Nix flakes.
+
+  Tech stack: Nix (flakes, NixOS modules, Home Manager), Clan framework (agentplot-kit)
+  Supported systems: x86_64-linux, aarch64-linux, aarch64-darwin, x86_64-darwin
+
+  Architecture:
+  - Each service in services/ defines one or more roles (e.g., server/client, host/guest,
+    or other service-specific roles). Roles encapsulate NixOS/Darwin modules, packages,
+    skills, and configuration relevant to that aspect of the service.
+  - HM module delegation: services accumulate Home Manager modules via agentplot.hmModules,
+    wired through modules/agentplot.nix into a single user config
+
+  Key directories:
+  - services/ — clanService definitions (default.nix, packages/, skills/)
+  - modules/ — shared NixOS/Darwin modules (agentplot adapter, caddy-cloudflare)
+  - tests/ — Nix evaluation smoke tests
+
+  Conventions:
+  - All infrastructure is declarative Nix — no imperative scripts
+  - Secrets managed via clan.core.vars generators
