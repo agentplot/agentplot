@@ -258,9 +258,10 @@
                 };
 
                 # Per-client SKILL.md with CLI name substituted
-                clientSkill = pkgs.runCommand "linkding-skill-${cliName}" { } ''
-                  ${pkgs.gnused}/bin/sed 's/linkding-cli/${cliName}/g' ${skillTemplate} > $out
-                '';
+                clientSkill = builtins.replaceStrings
+                  [ "linkding-cli" ]
+                  [ cliName ]
+                  (builtins.readFile skillTemplate);
 
                 # Claude Code MCP server config for this client
                 mcpConfig = {
