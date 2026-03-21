@@ -227,8 +227,8 @@
         settings,
         ...
       }:
-      {
-        nixosModule =
+      let
+        clientModule =
           {
             config,
             pkgs,
@@ -356,6 +356,10 @@
               lib.nameValuePair "linkding-${clientName}" cc.hmModule
             ) clientConfigs;
           };
+      in
+      {
+        nixosModule = clientModule;
+        darwinModule = clientModule;
       };
   };
 }
