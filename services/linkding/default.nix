@@ -251,7 +251,8 @@
                   name = cliName;
                   runtimeInputs = [ baseCli ];
                   text = ''
-                    export LINKDING_API_TOKEN="$(cat ${tokenPath})"
+                    LINKDING_API_TOKEN="$(cat ${tokenPath})"
+                    export LINKDING_API_TOKEN
                     export LINKDING_BASE_URL="${baseUrl}"
                     exec linkding-cli "$@"
                   '';
