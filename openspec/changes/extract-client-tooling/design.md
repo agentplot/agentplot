@@ -5,10 +5,10 @@ Agentplot has 5 services with client roles (linkding, ogham-mcp, subcog, gno, qm
 The agentplot-kit repo (`../agentplot-kit`) is the framework layer. It currently provides `modules/home-manager/claude-code.nix` (the claude-code HM module) and the clanService design docs, but no lib functions for service authors. The nix-agent-deck repo (`../nix-agent-deck`) provides the agent-deck HM module with `mcps` and `tools` options but no `skills` option.
 
 Five downstream HM modules exist:
-1. `programs.claude-code` (agentplot-kit) — skills (attrsOf str), mcpServers (attrsOf attrs), profiles
-2. `programs.agent-skills` (agent-skills-nix) — sources, explicit skills, multi-platform targets
-3. `programs.agent-deck` (nix-agent-deck) — mcps (attrsOf attrsOf anything), tools (attrsOf attrsOf anything)
-4. `programs.openclaw` (nix-openclaw) — skills (listOf submodule with name/mode/content)
+1. `programs.claude-code` (agentplot-kit) — skills (attrsOf (either lines path)), mcpServers (attrsOf jsonFormat.type), profiles (attrsOf profileModule)
+2. `programs.agent-skills` (agent-skills-nix) — sources (attrsOf sourceType), skills.explicit (attrsOf with from/path/rename/packages/transform), targets (attrsOf with enable/dest)
+3. `programs.agent-deck` (nix-agent-deck) — mcps (attrsOf (attrsOf anything)), tools (attrsOf (attrsOf anything))
+4. `programs.openclaw` (nix-openclaw) — skills (listOf submodule with name/mode/body/source/description/homepage)
 5. `programs.claude-tools` (claude-plugins-nix) — being dropped, overlaps with claude-code + agent-skills
 
 Agent-deck also has a runtime skills system: `~/.agent-deck/skills/pool/` directory, `sources.toml`, per-project `skills.toml` + symlinks. No HM option exists for declarative pool population.
@@ -123,7 +123,7 @@ programs.agent-deck.skillSources = lib.mkOption {
 
 The HM module generates `home.file.".agent-deck/skills/pool/${name}".source = path` for each entry. Agent-deck's TUI then discovers these skills in the pool and allows per-project attachment.
 
-`mkClientTooling` wires: `programs.agent-deck.skillSources.${skillName} = skillDir` for each skill when `agent-deck.skill.enabled = true`.
+`mkClientTooling` wires: `programs.agent-deck.skillSources.${skillName} = skillDir` for each skill when `agent-deck.skill.enabled = true`. Note: agent-deck requires each pool entry to be a **directory** containing a `SKILL.md` file, not the file itself. When `capabilities.skills` lists paths like `./skills/SKILL.md`, the symlink target must be the parent directory (`./skills/`).
 
 **Rationale**: Declarative management of the skill pool is cleaner than raw `home.file` and makes the capability visible in the nix-agent-deck option documentation. The nix-agent-deck repo is in this workspace, so the change is straightforward.
 

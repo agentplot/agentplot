@@ -8,7 +8,7 @@
 - [ ] 1.6 Implement secret management: generate clan vars generators per client from `capabilities.secret` with `agentplot-${serviceName}-${clientName}-${secretName}` naming
 - [ ] 1.7 Implement CLI wrapper generation: `writeShellApplication` per client from `capabilities.cli`
 - [ ] 1.8 Implement skill content substitution: read template, replace service name with client name in frontmatter and body
-- [ ] 1.9 Expose `lib` output in agentplot-kit `flake.nix` (add `lib.mkClientTooling = import ./lib/mkClientTooling.nix`)
+- [ ] 1.9 Add `mkClientTooling` to existing `lib` output in agentplot-kit `flake.nix` (alongside existing `lib.envContract`)
 
 ## 2. nix-agent-deck: Skill Pool HM Option
 
@@ -19,8 +19,9 @@
 ## 3. Refactor linkding Client Role
 
 - [ ] 3.1 Rewrite `services/linkding/default.nix` client role to use `mkClientTooling` with capabilities: `skill = ./skills/SKILL.md`, `cli = { package = ./packages/linkding-cli; ... }`, `secret = { name = "api-token"; mode = "prompted"; }`, `mcp = null` (linkding has no MCP server)
-- [ ] 3.2 Remove `claude-tools.enabled` option and all claude-tools delegation code
-- [ ] 3.3 Verify existing tests still pass after refactor
+- [ ] 3.2 Fix openclaw delegation: change `content` field to `body` and add `source` field (existing bug — `content` is not a valid openclaw skill field)
+- [ ] 3.3 Remove `claude-tools.enabled` option and all claude-tools delegation code
+- [ ] 3.4 Verify existing tests still pass after refactor
 
 ## 4. Refactor ogham-mcp Client Role
 
