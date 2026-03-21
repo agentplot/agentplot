@@ -85,11 +85,11 @@ Guest machines running qmd and gno SHALL have access to `pkgs.llm-agents.qmd` an
 - **THEN** `pkgs.llm-agents.qmd` and `pkgs.llm-agents.gno` SHALL be available
 
 ### Requirement: Client roles on darwin machines
-swancloud's darwin machines (mac-studio, macbook-pro) SHALL have client role entries for ogham-mcp, qmd, subcog, and gno with MCP endpoint configuration.
+swancloud's darwin machines (mac-studio, macbook-pro) SHALL have client role entries for ogham-mcp, qmd, subcog, and gno using the `mkClientTooling`-generated client interfaces. ogham-mcp clients use `url` (SSE endpoint), while qmd, gno, and subcog clients use `domain` (FQDN).
 
 #### Scenario: MCP endpoints configured on mac-studio
 - **WHEN** mac-studio's configuration is evaluated
-- **THEN** client roles for ogham-mcp, qmd, subcog, and gno SHALL configure MCP server entries pointing to their respective `*.swancloud.net` domains
+- **THEN** client roles SHALL configure MCP server entries: ogham-mcp clients with `url = "https://ogham.swancloud.net"`, qmd with `domain = "qmd.swancloud.net"`, subcog with `domain = "subcog.swancloud.net"`, gno with `domain = "gno.swancloud.net"`
 
 ### Requirement: caddy-cloudflare import updated
 swancloud SHALL import `caddy-cloudflare.nix` from `inputs.agentplot-kit.nixosModules.caddy-cloudflare` instead of the local `./modules/caddy-cloudflare.nix` copy. The local copy SHALL be deleted.
