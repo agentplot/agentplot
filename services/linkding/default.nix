@@ -145,19 +145,11 @@
   # ── Client Role ──────────────────────────────────────────────────────────────
 
   roles.client = {
-    description = "linkding agent tooling (CLI wrappers, skills, MCP, downstream HM delegation)";
+    description = "linkding agent tooling (CLI wrappers, skills, downstream HM delegation)";
 
     interface =
       { lib, ... }:
       let
-        profileSubmodule = lib.types.submodule {
-          options.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Add linkding MCP server entry to this Claude Code profile";
-          };
-        };
-
         clientSubmodule = lib.types.submodule {
           options = {
             name = lib.mkOption {
@@ -187,12 +179,18 @@
               mcp.enabled = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
-                description = "Configure Claude MCP server (default profile)";
+                description = "Not supported — linkding has no MCP server. Enable to get an evaluation error.";
               };
               profiles = lib.mkOption {
-                type = lib.types.attrsOf profileSubmodule;
+                type = lib.types.attrsOf (lib.types.submodule {
+                  options.mcp.enabled = lib.mkOption {
+                    type = lib.types.bool;
+                    default = false;
+                    description = "Not supported — linkding has no MCP server.";
+                  };
+                });
                 default = { };
-                description = "Per-profile MCP configuration";
+                description = "Per-profile configuration";
               };
             };
             agent-skills.enabled = lib.mkOption {
@@ -203,7 +201,7 @@
             agent-deck.mcp.enabled = lib.mkOption {
               type = lib.types.bool;
               default = false;
-              description = "Add agent-deck MCP entry (Phase 2)";
+              description = "Not supported — linkding has no MCP server. Enable to get an evaluation error.";
             };
             openclaw.skill.enabled = lib.mkOption {
               type = lib.types.bool;
@@ -268,15 +266,9 @@
                   [ "name: ${cliName}" cliName ]
                   (builtins.readFile skillTemplate);
 
-                # Claude Code MCP server config for this client
-                mcpConfig = {
-                  command = "${cliWrapper}/bin/${cliName}";
-                  args = [ "mcp" ];
-                  env = {
-                    LINKDING_API_TOKEN_FILE = tokenPath;
-                    LINKDING_BASE_URL = baseUrl;
-                  };
-                };
+                # MCP assertion helper — linkding has no MCP server
+                mcpNotSupported = opt:
+                  builtins.throw "linkding client '${clientName}': ${opt} is not supported — linkding has no MCP server. Use the CLI skill instead.";
               in
               {
                 # Clan vars generator for this client's API token
@@ -306,17 +298,10 @@
                     (lib.mkIf (clientSettings.claude-code.skill.enabled && !clientSettings.agent-skills.enabled) {
                       skills.${cliName} = clientSkill;
                     })
-                    (lib.mkIf clientSettings.claude-code.mcp.enabled {
-                      mcpServers.${cliName} = mcpConfig;
-                    })
-                    (lib.mkIf (clientSettings.claude-code.profiles != { }) {
-                      profiles = lib.mapAttrs (
-                        profileName: profileSettings:
-                        lib.mkIf profileSettings.mcp.enabled {
-                          mcpServers.${cliName} = mcpConfig;
-                        }
-                      ) clientSettings.claude-code.profiles;
-                    })
+                    (lib.mkIf clientSettings.claude-code.mcp.enabled
+                      (mcpNotSupported "claude-code.mcp.enabled"))
+                    (lib.mkIf (lib.any (p: p.mcp.enabled) (lib.attrValues clientSettings.claude-code.profiles))
+                      (mcpNotSupported "claude-code.profiles.*.mcp.enabled"))
                   ];
 
                   # Phase 2: agent-skills-nix delegation
@@ -334,9 +319,8 @@
                     targets.claude.enable = true;
                   };
 
-                  programs.agent-deck = lib.mkIf clientSettings.agent-deck.mcp.enabled {
-                    mcps.${cliName} = mcpConfig;
-                  };
+                  programs.agent-deck = lib.mkIf clientSettings.agent-deck.mcp.enabled
+                    (mcpNotSupported "agent-deck.mcp.enabled");
 
                   programs.openclaw = lib.mkIf clientSettings.openclaw.skill.enabled {
                     skills = [

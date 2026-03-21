@@ -1,10 +1,6 @@
 ---
 name: linkding
 description: Manage linkding bookmarks, tags, bundles, and assets via the REST API. Use when creating, searching, archiving, or organizing bookmarks, managing tags, working with bookmark bundles, or uploading assets.
-secrets:
-  - LINKDING_API_TOKEN
-env:
-  - LINKDING_BASE_URL
 ---
 
 # Linkding API Skill
@@ -13,13 +9,7 @@ Manage the linkding bookmark manager via its REST API using `linkding-cli`.
 
 `linkding-cli` wraps restish with the bundled OpenAPI spec, so all endpoints are auto-discovered as typed CLI commands. New API features work immediately without skill updates.
 
-## Authentication
-
-Authentication is handled via environment variables:
-- `LINKDING_API_TOKEN` — API token for authentication
-- `LINKDING_BASE_URL` — Base URL of the linkding instance
-
-No manual setup is needed — just use the commands below.
+Authentication is pre-configured — just use the commands below.
 
 ## Discovering Available Operations
 
