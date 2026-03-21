@@ -1,16 +1,50 @@
 # microvm
 
-Run Clan machines as MicroVM guests on a host using cloud-hypervisor.
+MicroVM infrastructure for running Clan machines as lightweight virtual machine guests on NixOS hosts using cloud-hypervisor.
+
+**Upstream:** [astro/microvm.nix](https://github.com/astro/microvm.nix)
 
 ## Roles
 
-- **host** — Machine that runs MicroVM guests. Imports the microvm host module, creates persistent storage directories, and wires up journal forwarding.
-- **guest** — Machine that runs as a MicroVM guest. Configures cloud-hypervisor with virtiofs shares for nix store, sops secrets, SSH keys, journal, and persistent storage.
+### Host
 
-## Settings
+Configures the NixOS host to run MicroVM guests. Handles:
+
+- microvm.nix host module import
+- Persistent storage directories per guest
+- Journal forwarding from guests
+- Deterministic machine IDs, MAC addresses, and vsock CIDs derived from hostname
+- TAP network interfaces with bridge connectivity
 
 ### Guest
 
-| Setting | Type | Description |
-|---------|------|-------------|
-| `host` | string | Inventory machine name of the host that runs this guest |
+Configures a NixOS system to run inside a MicroVM via cloud-hypervisor. Provides:
+
+- Virtiofs shares for nix store, sops secrets, SSH keys, journal, and persistent storage
+- Network configuration via TAP interface
+- Persistent state directory
+
+## Example Inventory
+
+```nix
+{
+  services.microvm.host.hypervisor = {
+    roles = [ "host" ];
+  };
+
+  services.microvm.guest.worker = {
+    roles = [ "guest" ];
+    config.host = "hypervisor";
+  };
+}
+```
+
+## Key Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `host` (guest role) | string | Inventory machine name of the host that runs this guest |
+
+## Notes
+
+This service has no client role — microVMs are infrastructure-level and do not expose agent tooling.
