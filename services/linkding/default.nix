@@ -49,16 +49,20 @@
           }:
           let
             oidcEnabled = settings.oidc.enable;
-            issuerDomain = settings.oidc.issuerDomain;
-            clientId = machine.name;
-            secretPath =
-              if oidcEnabled
-              then config.clan.core.vars.generators."kanidm-oidc-${machine.name}".files."client-secret".path
-              else "";
+            oidcCfg = config.agentplot.oidc.clients.linkding;
             dbPasswordPath = config.clan.core.vars.generators."linkding-db-password".files."password".path;
             tlsConfig = config.caddy-cloudflare.tls;
           in
           {
+            imports = [ ../../modules/oidc.nix ];
+
+            agentplot.oidc.clients.linkding = lib.mkIf oidcEnabled {
+              enable = true;
+              provider = "kanidm";
+              issuerUrl = settings.oidc.issuerDomain;
+              clientId = machine.name;
+            };
+
             clan.core.vars.generators."linkding-db-password" = {
               share = true;
               files."password" = {
@@ -103,15 +107,15 @@
                   printf 'LD_DB_PASSWORD=%s\n' "$DB_PASSWORD" > /run/linkding-db.env
                 ''
                 + lib.optionalString oidcEnabled ''
-                  SECRET=$(cat ${secretPath})
+                  SECRET=$(cat ${config.clan.core.vars.generators."oidc-linkding".files."client-secret".path})
                   printf '%s\n' \
-                    "OIDC_OP_AUTHORIZATION_ENDPOINT=https://${issuerDomain}/ui/oauth2" \
-                    "OIDC_OP_TOKEN_ENDPOINT=https://${issuerDomain}/oauth2/token" \
-                    "OIDC_OP_USER_ENDPOINT=https://${issuerDomain}/oauth2/openid/${clientId}/userinfo" \
-                    "OIDC_OP_JWKS_ENDPOINT=https://${issuerDomain}/oauth2/openid/${clientId}/public_key.jwk" \
-                    "OIDC_RP_CLIENT_ID=${clientId}" \
+                    "OIDC_OP_AUTHORIZATION_ENDPOINT=${oidcCfg.endpoints.authorization}" \
+                    "OIDC_OP_TOKEN_ENDPOINT=${oidcCfg.endpoints.token}" \
+                    "OIDC_OP_USER_ENDPOINT=${oidcCfg.endpoints.userinfo}" \
+                    "OIDC_OP_JWKS_ENDPOINT=${oidcCfg.endpoints.jwks}" \
+                    "OIDC_RP_CLIENT_ID=${oidcCfg.clientId}" \
                     "OIDC_RP_CLIENT_SECRET=$SECRET" \
-                    "OIDC_RP_SIGN_ALGO=ES256" \
+                    "OIDC_RP_SIGN_ALGO=${oidcCfg.signAlgorithm}" \
                     > /run/linkding-oidc.env
                 ''
               );
@@ -260,8 +264,8 @@
 
                 # Per-client SKILL.md with CLI name substituted
                 clientSkill = builtins.replaceStrings
-                  [ "linkding-cli" ]
-                  [ cliName ]
+                  [ "name: linkding" "linkding-cli" ]
+                  [ "name: ${cliName}" cliName ]
                   (builtins.readFile skillTemplate);
 
                 # Claude Code MCP server config for this client
@@ -299,7 +303,7 @@
                   home.packages = lib.optionals clientSettings.cli.enabled [ cliWrapper ];
 
                   programs.claude-code = lib.mkMerge [
-                    (lib.mkIf clientSettings.claude-code.skill.enabled {
+                    (lib.mkIf (clientSettings.claude-code.skill.enabled && !clientSettings.agent-skills.enabled) {
                       skills.${cliName} = clientSkill;
                     })
                     (lib.mkIf clientSettings.claude-code.mcp.enabled {
@@ -325,7 +329,7 @@
                       source = "agentplot-linkding";
                       packages = [ cliWrapper ];
                       transform = content:
-                        builtins.replaceStrings [ "linkding-cli" ] [ cliName ] content;
+                        builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: ${cliName}" cliName ] content;
                     };
                     targets.claude.enable = true;
                   };
