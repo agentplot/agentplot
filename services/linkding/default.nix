@@ -319,17 +319,17 @@
                     })
                   ];
 
-                  # Phase 2 delegation stubs
+                  # Phase 2: agent-skills-nix delegation
                   programs.agent-skills = lib.mkIf clientSettings.agent-skills.enabled {
+                    enable = true;
                     sources."agentplot-linkding" = {
-                      type = "path";
-                      path = "${./skills}";
+                      path = ./skills;
                     };
                     skills.explicit.${cliName} = {
-                      source = "agentplot-linkding";
+                      from = "agentplot-linkding";
                       packages = [ cliWrapper ];
-                      transform = content:
-                        builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: ${cliName}" cliName ] content;
+                      transform = { original, ... }:
+                        builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: ${cliName}" cliName ] original;
                     };
                     targets.claude.enable = true;
                   };

@@ -1,10 +1,26 @@
-{ writeShellApplication, restish }:
+{
+  writeShellApplication,
+  restish,
+  python3Packages,
+}:
+let
+  mcpPython = python3Packages.python.withPackages (ps: [ ps.mcp ]);
+  mcpServerScript = ./mcp_server.py;
+in
 writeShellApplication {
   name = "linkding-cli";
-  runtimeInputs = [ restish ];
+  runtimeInputs = [
+    restish
+    mcpPython
+  ];
   text = ''
     : "''${LINKDING_BASE_URL:?LINKDING_BASE_URL not set}"
     : "''${LINKDING_API_TOKEN:?LINKDING_API_TOKEN not set}"
+
+    # MCP server mode — stdio transport
+    if [[ "''${1:-}" == "mcp" ]]; then
+      exec ${mcpPython}/bin/python3 ${mcpServerScript}
+    fi
 
     TMPHOME=$(mktemp -d)
     trap 'rm -rf "$TMPHOME"' EXIT

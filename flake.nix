@@ -61,12 +61,12 @@
 
       nixosModules.agentplot = {
         imports = [ ./modules/agentplot.nix ];
-        agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
+        config.agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
       };
       nixosModules.oidc = import ./modules/oidc.nix;
       darwinModules.agentplot = {
         imports = [ ./modules/agentplot.nix ];
-        agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
+        config.agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
       };
       darwinModules.oidc = import ./modules/oidc.nix;
 
