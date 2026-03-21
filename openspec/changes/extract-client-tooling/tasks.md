@@ -21,7 +21,7 @@
 - [x] 3.1 Rewrite `services/linkding/default.nix` client role to use `mkClientTooling` with capabilities: `skill = ./skills/SKILL.md`, `cli = { package = ./packages/linkding-cli; ... }`, `secret = { name = "api-token"; mode = "prompted"; }`, `mcp = null` (linkding has no MCP server)
 - [x] 3.2 Fix openclaw delegation: change `content` field to `body` and add `source` field (existing bug — `content` is not a valid openclaw skill field)
 - [x] 3.3 Remove `claude-tools.enabled` option and all claude-tools delegation code
-- [ ] 3.4 Verify existing tests still pass after refactor
+- [x] 3.4 Verify existing tests still pass after refactor
 
 ## 4. Refactor ogham-mcp Client Role
 
@@ -60,6 +60,6 @@
 
 ## 10. Tests and Validation
 
-- [ ] 10.1 Create `tests/mkClientTooling-composition.nix` — verify two services using mkClientTooling compose their HM modules without conflict
-- [ ] 10.2 Update existing delegation tests to work with new mkClientTooling-generated structure
-- [ ] 10.3 Run `nix flake check` on both agentplot-kit and agentplot to verify no regressions
+- [x] 10.1 Create `tests/mkClientTooling-composition.nix` — verify two services using mkClientTooling compose their HM modules without conflict
+- [x] 10.2 Update existing delegation tests to work with new mkClientTooling-generated structure
+- [x] 10.3 Run `nix flake check` on both agentplot-kit and agentplot to verify no regressions
