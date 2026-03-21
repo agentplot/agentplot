@@ -6,16 +6,16 @@ let
   pkgs = import <nixpkgs> { };
   lib = pkgs.lib;
 
-  skillsDirStr = builtins.toString ../services/linkding/skills;
-
   # ── Stub: programs.agent-skills option definitions ─────────────────────────
   agentSkillsOptions = { lib, ... }: {
     options.programs.agent-skills = {
+      enable = lib.mkEnableOption "agent-skills";
       sources = lib.mkOption {
         type = lib.types.attrsOf (lib.types.submodule {
           options = {
-            type = lib.mkOption { type = lib.types.str; };
-            path = lib.mkOption { type = lib.types.str; };
+            path = lib.mkOption { type = lib.types.nullOr lib.types.path; default = null; };
+            input = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; };
+            subdir = lib.mkOption { type = lib.types.str; default = "."; };
           };
         });
         default = { };
@@ -23,9 +23,10 @@ let
       skills.explicit = lib.mkOption {
         type = lib.types.attrsOf (lib.types.submodule {
           options = {
-            source = lib.mkOption { type = lib.types.str; };
+            from = lib.mkOption { type = lib.types.str; };
+            path = lib.mkOption { type = lib.types.str; default = ""; };
             packages = lib.mkOption { type = lib.types.listOf lib.types.package; default = [ ]; };
-            transform = lib.mkOption { type = lib.types.anything; };
+            transform = lib.mkOption { type = lib.types.nullOr lib.types.raw; default = null; };
           };
         });
         default = { };
@@ -53,15 +54,15 @@ let
   personalCli = mkMockCli "linkding";
   personalHM = { ... }: {
     programs.agent-skills = {
+      enable = true;
       sources."agentplot-linkding" = {
-        type = "path";
-        path = skillsDirStr;
+        path = ../services/linkding/skills;
       };
       skills.explicit."linkding" = {
-        source = "agentplot-linkding";
+        from = "agentplot-linkding";
         packages = [ personalCli ];
-        transform = content:
-          builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: linkding" "linkding" ] content;
+        transform = { original, ... }:
+          builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: linkding" "linkding" ] original;
       };
       targets.claude.enable = true;
     };
@@ -72,15 +73,15 @@ let
   bizCli = mkMockCli "linkding-biz";
   bizHM = { ... }: {
     programs.agent-skills = {
+      enable = true;
       sources."agentplot-linkding" = {
-        type = "path";
-        path = skillsDirStr;
+        path = ../services/linkding/skills;
       };
       skills.explicit."linkding-biz" = {
-        source = "agentplot-linkding";
+        from = "agentplot-linkding";
         packages = [ bizCli ];
-        transform = content:
-          builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: linkding-biz" "linkding-biz" ] content;
+        transform = { original, ... }:
+          builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: linkding-biz" "linkding-biz" ] original;
       };
       targets.claude.enable = true;
     };
@@ -110,25 +111,24 @@ let
 in
 
 # ── Source registration ────────────────────────────────────────────────────
-assert src.type == "path";
-assert src.path == skillsDirStr;
+assert src.path != null;
 
 # ── Single-client: personal skill ─────────────────────────────────────────
 assert builtins.hasAttr "linkding" skills;
-assert skills."linkding".source == "agentplot-linkding";
+assert skills."linkding".from == "agentplot-linkding";
 assert builtins.length skills."linkding".packages == 1;
 
 # ── Multi-client: biz skill ──────────────────────────────────────────────
 assert builtins.hasAttr "linkding-biz" skills;
-assert skills."linkding-biz".source == "agentplot-linkding";
+assert skills."linkding-biz".from == "agentplot-linkding";
 assert builtins.length skills."linkding-biz".packages == 1;
 
 # ── Transform verification ───────────────────────────────────────────────
 assert builtins.isFunction skills."linkding".transform;
-assert skills."linkding".transform "use linkding-cli to search" == "use linkding to search";
-assert skills."linkding-biz".transform "use linkding-cli to search" == "use linkding-biz to search";
-assert skills."linkding".transform "name: linkding" == "name: linkding";
-assert skills."linkding-biz".transform "name: linkding" == "name: linkding-biz";
+assert skills."linkding".transform { original = "use linkding-cli to search"; dependencies = ""; } == "use linkding to search";
+assert skills."linkding-biz".transform { original = "use linkding-cli to search"; dependencies = ""; } == "use linkding-biz to search";
+assert skills."linkding".transform { original = "name: linkding"; dependencies = ""; } == "name: linkding";
+assert skills."linkding-biz".transform { original = "name: linkding"; dependencies = ""; } == "name: linkding-biz";
 
 # ── Claude target enabled ────────────────────────────────────────────────
 assert cfg.programs.agent-skills.targets.claude.enable == true;
