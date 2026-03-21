@@ -36,7 +36,9 @@ linkding-cli <operation-id> --help
 - **GET query parameters** use `--flag value` syntax (flags are kebab-case, auto-generated from the OpenAPI spec):
   `linkding-cli list-bookmarks --q "search" --limit 5`
 - **POST/PUT/PATCH body parameters** use `key:value` syntax:
-  `linkding-cli create-bookmark url:"https://example.com" tag_names:["dev"]`
+  `linkding-cli create-bookmark 'url:"https://example.com"' 'tag_names:["dev"]'`
+
+**Shell quoting is critical:** Values containing colons (URLs, timestamps) must be double-quoted *for restish*, and those double quotes must survive shell expansion. Wrap each `key:"value"` argument in single quotes: `'url:"https://example.com"'`. Without single quotes, the shell strips the inner double quotes and restish misparses `https:` as a nested key.
 
 Do NOT use `key:value` for GET query params — restish treats those as body args and will error with "accepts 0 arg(s)".
 
@@ -64,22 +66,22 @@ linkding-cli list-bookmarks --bundle 1
 linkding-cli retrieve-bookmark 42
 
 # Create a bookmark (title/description auto-scraped)
-linkding-cli create-bookmark url:"https://example.com" tag_names:["dev","reference"]
+linkding-cli create-bookmark 'url:"https://example.com"' 'tag_names:["dev","reference"]'
 
 # Create a bookmark with explicit metadata (skip scraping)
 linkding-cli create-bookmark \
-  url:"https://example.com" \
-  title:"Example Site" \
-  description:"A useful reference" \
-  notes:"Found via HN" \
-  tag_names:["dev","reference"] \
+  'url:"https://example.com"' \
+  'title:"Example Site"' \
+  'description:"A useful reference"' \
+  'notes:"Found via HN"' \
+  'tag_names:["dev","reference"]' \
   disable_scraping:true
 
 # Update a bookmark (partial — only change specified fields)
-linkding-cli partial-update-bookmark 42 title:"Updated Title" tag_names:["new-tag"]
+linkding-cli partial-update-bookmark 42 'title:"Updated Title"' 'tag_names:["new-tag"]'
 
 # Update a bookmark (full — replaces all fields)
-linkding-cli update-bookmark 42 url:"https://example.com" title:"Full Update"
+linkding-cli update-bookmark 42 'url:"https://example.com"' 'title:"Full Update"'
 
 # Delete a bookmark
 linkding-cli delete-bookmark 42
@@ -114,7 +116,7 @@ linkding-cli list-tags
 linkding-cli retrieve-tag 5
 
 # Create a tag
-linkding-cli create-tag name:"project-alpha"
+linkding-cli create-tag 'name:"project-alpha"'
 ```
 
 ### Bundles
@@ -130,13 +132,13 @@ linkding-cli retrieve-bundle 1
 
 # Create a bundle (filter by tags and search)
 linkding-cli create-bundle \
-  name:"Dev Resources" \
-  search:"tutorial" \
-  any_tags:"dev javascript" \
-  excluded_tags:"archived"
+  'name:"Dev Resources"' \
+  'search:"tutorial"' \
+  'any_tags:"dev javascript"' \
+  'excluded_tags:"archived"'
 
 # Update a bundle
-linkding-cli partial-update-bundle 1 name:"Updated Bundle"
+linkding-cli partial-update-bundle 1 'name:"Updated Bundle"'
 
 # Delete a bundle
 linkding-cli delete-bundle 1
