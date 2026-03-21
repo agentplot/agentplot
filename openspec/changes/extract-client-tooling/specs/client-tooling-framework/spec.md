@@ -4,11 +4,11 @@
 The `agentplot-kit.lib.mkClientTooling` function SHALL accept a capabilities attrset and return `{ interface; perInstance; }` that can be directly assigned to a clanService's `roles.client`.
 
 #### Scenario: MCP-only service (no skill, no CLI)
-- **WHEN** a service calls `mkClientTooling` with `capabilities.mcp` set and `capabilities.skill = null` and `capabilities.cli = null`
+- **WHEN** a service calls `mkClientTooling` with `capabilities.mcp` set and `capabilities.skills = null (or [])` and `capabilities.cli = null`
 - **THEN** the generated interface SHALL contain `claude-code.mcp.enabled`, `claude-code.profiles`, and `agent-deck.mcp.enabled` options but SHALL NOT contain any skill-related options (`claude-code.skill.enabled`, `agent-skills.enabled`, `openclaw.skill.enabled`, `agent-deck.skill.enabled`)
 
 #### Scenario: Skill-only service (no MCP)
-- **WHEN** a service calls `mkClientTooling` with `capabilities.skill` set to a path and `capabilities.mcp = null`
+- **WHEN** a service calls `mkClientTooling` with `capabilities.skills` set to a list of skill paths and `capabilities.mcp = null`
 - **THEN** the generated interface SHALL contain `claude-code.skill.enabled`, `agent-skills.enabled`, `openclaw.skill.enabled`, and `agent-deck.skill.enabled` options but SHALL NOT contain any MCP-related options
 
 #### Scenario: Full capabilities (skill + MCP + CLI)
@@ -59,7 +59,7 @@ When `capabilities.cli` is provided, `mkClientTooling` SHALL generate per-client
 - **THEN** two distinct wrapper scripts SHALL be generated, each with the correct name and environment variables
 
 ### Requirement: Skill content substitution
-When `capabilities.skill` is provided, `mkClientTooling` SHALL read the skill template and substitute the service name with the client-specific name in both frontmatter `name:` field and CLI references.
+When `capabilities.skills` is provided, `mkClientTooling` SHALL read the skill template and substitute the service name with the client-specific name in both frontmatter `name:` field and CLI references.
 
 #### Scenario: Client name differs from service name
 - **WHEN** serviceName is "linkding" and client name is "linkding-biz"

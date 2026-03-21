@@ -40,7 +40,9 @@ Agent-deck also has a runtime skills system: `~/.agent-deck/skills/pool/` direct
 agentplot-kit.lib.mkClientTooling {
   serviceName = "qmd";
   capabilities = {
-    skill = ./skills/SKILL.md;        # path or null
+    skills = [                         # list of paths, or null
+      ./skills/SKILL.md
+    ];                                 # multiple skills per service supported
     mcp = {                            # attrset or null
       type = "http";                   # "http" | "sse"
       urlTemplate = client: "https://${client.domain}/mcp";
@@ -76,16 +78,16 @@ agentplot-kit.lib.mkClientTooling {
 
 ```
 Target Registry:
-  claude-code-skill:   requires [skill]        → programs.claude-code.skills.X
+  claude-code-skill:   requires [skills]       → programs.claude-code.skills.X (per skill)
   claude-code-mcp:     requires [mcp]          → programs.claude-code.mcpServers.X
   claude-code-profile: requires [mcp]          → programs.claude-code.profiles.*.mcpServers.X
-  agent-skills:        requires [skill]        → programs.agent-skills.{sources,explicit,targets}
+  agent-skills:        requires [skills]       → programs.agent-skills.{sources,explicit,targets} (per skill)
   agent-deck-mcp:      requires [mcp]          → programs.agent-deck.mcps.X
-  agent-deck-skill:    requires [skill]        → home.file + programs.agent-deck.skillSources
-  openclaw-skill:      requires [skill]        → programs.openclaw.skills list
+  agent-deck-skill:    requires [skills]       → programs.agent-deck.skillSources (per skill dir)
+  openclaw-skill:      requires [skills]       → programs.openclaw.skills list (per skill)
 ```
 
-When `capabilities.skill = null`, none of the skill-consuming targets appear in the interface. When `capabilities.mcp = null`, none of the MCP targets appear.
+When `capabilities.skills = null` or `[]`, none of the skill-consuming targets appear in the interface. When `capabilities.mcp = null`, none of the MCP targets appear. Services may declare multiple skills (e.g., a service with both a management skill and a query skill); each skill gets its own enable flag and is distributed independently to downstream targets.
 
 **Rationale**: This is the extensibility point. Adding a new agent platform (e.g., Cursor, Aider) means adding one target definition with its requirements and wiring function. Every service that declared matching capabilities automatically gets the new target.
 
@@ -121,7 +123,7 @@ programs.agent-deck.skillSources = lib.mkOption {
 
 The HM module generates `home.file.".agent-deck/skills/pool/${name}".source = path` for each entry. Agent-deck's TUI then discovers these skills in the pool and allows per-project attachment.
 
-`mkClientTooling` wires: `programs.agent-deck.skillSources.${serviceName} = skillDir` when `agent-deck.skill.enabled = true`.
+`mkClientTooling` wires: `programs.agent-deck.skillSources.${skillName} = skillDir` for each skill when `agent-deck.skill.enabled = true`.
 
 **Rationale**: Declarative management of the skill pool is cleaner than raw `home.file` and makes the capability visible in the nix-agent-deck option documentation. The nix-agent-deck repo is in this workspace, so the change is straightforward.
 
@@ -143,7 +145,22 @@ The secret path is available to capabilities via `client.tokenPath` (resolved in
 
 **Rationale**: `claude-tools` (claude-plugins-nix) wraps Kamalnrf/claude-plugins for marketplace skill installation. This overlaps entirely with `programs.claude-code.skills` (direct skill writing) and `programs.agent-skills` (multi-platform distribution). The upstream is low-activity (last update Jan 2026). Removing it simplifies the target registry and removes a flake input.
 
-### 7. Service README Pattern
+### 7. Multiple Skills Per Service
+
+**Decision**: `capabilities.skills` is a list of skill paths (or null). Each skill is identified by its directory name relative to the service. When a service has multiple skills, each gets independently distributed to all skill-consuming targets.
+
+```nix
+capabilities.skills = [
+  ./skills/manage/SKILL.md   # management operations
+  ./skills/query/SKILL.md    # read-only query skill
+];
+```
+
+The skill directory structure determines the skill name. For agent-deck pool, each skill directory is symlinked independently. For claude-code/agent-skills/openclaw, each skill gets its own entry.
+
+**Rationale**: Some services may want to expose different capabilities to different contexts — e.g., a full management skill for admin agents and a read-only query skill for general-purpose agents. The downstream targets (claude-code, agent-skills, agent-deck, openclaw) all support multiple entries natively.
+
+### 8. Service README Pattern
 
 **Decision**: Each `services/<name>/` directory gets a `README.md` with:
 - What the service does (one paragraph)

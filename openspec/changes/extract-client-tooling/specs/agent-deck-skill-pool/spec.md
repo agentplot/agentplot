@@ -16,8 +16,8 @@ The `programs.agent-deck` HM module SHALL expose a `skillSources` option of type
 - **THEN** no pool symlinks SHALL be created and the existing pool directory SHALL not be affected
 
 ### Requirement: mkClientTooling wires agent-deck skill pool
-When `capabilities.skill` is provided and `agent-deck.skill.enabled = true` on a client, `mkClientTooling` SHALL set `programs.agent-deck.skillSources.${clientName}` to the skill directory path.
+When `capabilities.skills` is provided and `agent-deck.skill.enabled = true` on a client, `mkClientTooling` SHALL set `programs.agent-deck.skillSources.${clientName}` to the skill directory path.
 
 #### Scenario: Service with skill capability enables agent-deck skill
-- **WHEN** a service declares `capabilities.skill = ./skills/SKILL.md` and a client enables `agent-deck.skill.enabled = true`
+- **WHEN** a service declares `capabilities.skills = ./skills/SKILL.md` and a client enables `agent-deck.skill.enabled = true`
 - **THEN** the generated HM module SHALL include `programs.agent-deck.skillSources.${clientName} = skillDir`
