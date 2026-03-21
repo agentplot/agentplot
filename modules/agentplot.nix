@@ -10,6 +10,16 @@ in
       description = "Username to wire accumulated HM modules into via home-manager.users.<user>";
     };
 
+    hmBaseModules = lib.mkOption {
+      type = lib.types.listOf lib.types.deferredModule;
+      default = [ ];
+      description = ''
+        Framework-level Home Manager modules imported alongside per-service modules.
+        Used to provide option definitions (e.g., programs.agent-skills from agent-skills-nix)
+        that service HM modules depend on.
+      '';
+    };
+
     hmModules = lib.mkOption {
       type = lib.types.attrsOf lib.types.deferredModule;
       default = { };
@@ -23,7 +33,7 @@ in
 
   config = lib.mkIf (cfg.user != null && cfg.hmModules != { }) {
     home-manager.users.${cfg.user} = {
-      imports = lib.attrValues cfg.hmModules;
+      imports = cfg.hmBaseModules ++ lib.attrValues cfg.hmModules;
     };
   };
 }
