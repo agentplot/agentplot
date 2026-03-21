@@ -14,11 +14,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    claude-plugins-nix = {
-      url = "github:mreimbold/claude-plugins-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nix-agent-deck = {
       url = "github:codecorral/nix-agent-deck";
       inputs.nixpkgs.follows = "nixpkgs";

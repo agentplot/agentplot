@@ -43,7 +43,7 @@ Services define Home Manager modules that accumulate into `agentplot.hmModules.<
 
 - `agentplot-kit` — Framework for building clanServices
 - `microvm` — MicroVM hypervisor (astro/microvm.nix)
-- `agent-skills-nix`, `claude-plugins-nix`, `nix-agent-deck`, `nix-openclaw`
+- `agent-skills-nix`, `nix-agent-deck`, `nix-openclaw`
 
 ## Flake Outputs
 
