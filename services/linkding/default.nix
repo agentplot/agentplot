@@ -284,6 +284,9 @@
                     };
                     files."token" = {
                       secret = true;
+                    } // lib.optionalAttrs (config ? agentplot && config.agentplot.user != null) {
+                      owner = config.agentplot.user;
+                      group = "staff";
                     };
                     script = ''
                       cp "$prompts/token" "$out/token"
