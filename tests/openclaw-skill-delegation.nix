@@ -1,4 +1,4 @@
-# Smoke test: verify OpenClaw skill delegation from linkding client role.
+# Smoke test: verify OpenClaw skill delegation from mkClientTooling-generated services.
 # Run: nix-instantiate --eval tests/openclaw-skill-delegation.nix
 let
   pkgs = import <nixpkgs> { };
@@ -15,18 +15,19 @@ let
     };
   };
 
-  # ── Mock HM modules (simulating what linkding client role generates) ──────
+  # ── Mock HM modules (simulating what mkClientTooling generates) ──────────
 
   # Client 1: linkding (openclaw enabled)
   linkdingPersonalHM = { ... }: {
     programs.openclaw.skills = [
       {
         name = "linkding";
-        mode = "symlink";
-        content = builtins.replaceStrings
+        mode = "inline";
+        body = builtins.replaceStrings
           [ "name: linkding" "linkding-cli" ]
           [ "name: linkding" "linkding" ]
           (builtins.readFile ../services/linkding/skills/SKILL.md);
+        description = "Manage linkding bookmarks, tags, bundles, and assets via the REST API. Use when creating, searching, archiving, or organizing bookmarks, managing tags, working with bookmark bundles, or uploading assets.";
       }
     ];
   };
@@ -36,11 +37,12 @@ let
     programs.openclaw.skills = [
       {
         name = "linkding-biz";
-        mode = "symlink";
-        content = builtins.replaceStrings
+        mode = "inline";
+        body = builtins.replaceStrings
           [ "name: linkding" "linkding-cli" ]
           [ "name: linkding-biz" "linkding-biz" ]
           (builtins.readFile ../services/linkding/skills/SKILL.md);
+        description = "Manage linkding bookmarks, tags, bundles, and assets via the REST API. Use when creating, searching, archiving, or organizing bookmarks, managing tags, working with bookmark bundles, or uploading assets.";
       }
     ];
   };
@@ -90,22 +92,22 @@ in
 # ── Single-client assertions ──────────────────────────────────────────────
 assert builtins.length singleSkills == 1;
 assert (builtins.head singleSkills).name == "linkding";
-assert (builtins.head singleSkills).mode == "symlink";
-assert builtins.isString (builtins.head singleSkills).content;
-assert builtins.stringLength (builtins.head singleSkills).content > 0;
+assert (builtins.head singleSkills).mode == "inline";
+assert builtins.isString (builtins.head singleSkills).body;
+assert builtins.stringLength (builtins.head singleSkills).body > 0;
 
 # ── Multi-client assertions ──────────────────────────────────────────────
 assert builtins.length multiSkills == 2;
-assert (findSkill "linkding" multiSkills).mode == "symlink";
-assert (findSkill "linkding-biz" multiSkills).mode == "symlink";
+assert (findSkill "linkding" multiSkills).mode == "inline";
+assert (findSkill "linkding-biz" multiSkills).mode == "inline";
 
 # ── Content substitution assertions ──────────────────────────────────────
-# linkding-biz skill content should reference "linkding-biz", not "linkding-cli"
-assert lib.hasInfix "linkding-biz" (findSkill "linkding-biz" multiSkills).content;
-assert !(lib.hasInfix "linkding-cli" (findSkill "linkding-biz" multiSkills).content);
+# linkding-biz skill body should reference "linkding-biz", not "linkding-cli"
+assert lib.hasInfix "linkding-biz" (findSkill "linkding-biz" multiSkills).body;
+assert !(lib.hasInfix "linkding-cli" (findSkill "linkding-biz" multiSkills).body);
 
 # ── Mixed enabled/disabled assertions ────────────────────────────────────
 assert builtins.length mixedSkills == 1;
 assert (builtins.head mixedSkills).name == "linkding";
 
-"PASS: openclaw-skill-delegation — single-client, multi-client, content substitution, mixed enabled/disabled"
+"PASS: openclaw-skill-delegation — single-client, multi-client, content substitution, mixed enabled/disabled (using body field)"
