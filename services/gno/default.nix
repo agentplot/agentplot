@@ -1,4 +1,4 @@
-{ ... }:
+{ mkClientTooling, ... }:
 {
   _class = "clan.service";
   manifest.name = "gno";
@@ -121,96 +121,26 @@
 
   # ── Client Role ──────────────────────────────────────────────────────────────
 
-  roles.client = {
-    description = "gno MCP endpoint configuration and HM module delegation";
-
-    interface =
-      { lib, ... }:
-      let
-        profileSubmodule = lib.types.submodule {
-          options.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Add gno MCP server entry to this Claude Code profile";
+  roles.client =
+    let
+      tooling = mkClientTooling {
+        serviceName = "gno";
+        capabilities = {
+          mcp = {
+            type = "http";
+            urlTemplate = client: "https://${client.domain}/mcp";
           };
         };
-      in
-      {
-        options = {
+        extraClientOptions = { lib, ... }: {
           domain = lib.mkOption {
             type = lib.types.str;
             description = "FQDN of the gno server instance";
           };
-          port = lib.mkOption {
-            type = lib.types.int;
-            default = 8422;
-            description = "HTTP port of the gno server (used only if non-standard URL needed)";
-          };
-          claude-code = {
-            mcp.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Configure Claude Code MCP server for gno (default profile)";
-            };
-            profiles = lib.mkOption {
-              type = lib.types.attrsOf profileSubmodule;
-              default = { };
-              description = "Per-profile MCP configuration for Claude Code";
-            };
-          };
-          agent-deck.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Add agent-deck MCP entry for gno";
-          };
         };
       };
-
-    perInstance =
-      {
-        settings,
-        ...
-      }:
-      let
-        clientModule =
-          { lib, ... }:
-          let
-            mcpUrl = "https://${settings.domain}/mcp";
-            mcpConfig = {
-              url = mcpUrl;
-            };
-          in
-          {
-            programs.claude-code = lib.mkMerge [
-              (lib.mkIf settings.claude-code.mcp.enabled {
-                mcpServers.gno = mcpConfig;
-              })
-              (lib.mkIf (settings.claude-code.profiles != { }) {
-                profiles = lib.mapAttrs (
-                  _profileName: profileSettings:
-                  lib.mkIf profileSettings.mcp.enabled {
-                    mcpServers.gno = mcpConfig;
-                  }
-                ) settings.claude-code.profiles;
-              })
-            ];
-
-            programs.agent-deck = lib.mkIf settings.agent-deck.mcp.enabled {
-              mcps.gno = mcpConfig;
-            };
-          };
-      in
-      {
-        nixosModule =
-          { lib, ... }:
-          {
-            agentplot.hmModules.gno-client = clientModule;
-          };
-        darwinModule =
-          { lib, ... }:
-          {
-            agentplot.hmModules.gno-client = clientModule;
-          };
-      };
-  };
+    in
+    {
+      description = "gno MCP endpoint configuration and HM module delegation";
+      inherit (tooling) interface perInstance;
+    };
 }

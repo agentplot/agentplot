@@ -1,4 +1,4 @@
-{ ... }:
+{ mkClientTooling, ... }:
 {
   _class = "clan.service";
   manifest.name = "subcog";
@@ -159,91 +159,37 @@
 
   # ── Client Role ──────────────────────────────────────────────────────────────
 
-  roles.client = {
-    description = "subcog MCP client (HTTP endpoint config, JWT auth, HM delegation)";
-
-    interface =
-      { lib, ... }:
-      {
-        options = {
+  roles.client =
+    let
+      tooling = mkClientTooling {
+        serviceName = "subcog";
+        capabilities = {
+          skills = [ ./skills/SKILL.md ];
+          mcp = {
+            type = "http";
+            urlTemplate = client: "https://${client.domain}/mcp";
+          };
+          secret = {
+            name = "jwt-secret";
+            mode = "generated";
+            description = client: "JWT secret for subcog client '${client.name}'";
+          };
+        };
+        extraClientOptions = { lib, ... }: {
           domain = lib.mkOption {
             type = lib.types.str;
             description = "FQDN of the subcog server (e.g., subcog.swancloud.net)";
           };
-          claude-code.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Configure Claude Code MCP server for subcog";
-          };
-          agent-deck.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Configure agent-deck MCP server for subcog";
+          namespace = lib.mkOption {
+            type = lib.types.str;
+            default = "default";
+            description = "Memory namespace for scoping";
           };
         };
       };
-
-    perInstance =
-      {
-        settings,
-        instanceName,
-        ...
-      }:
-      let
-        clientModule =
-          {
-            config,
-            pkgs,
-            lib,
-            ...
-          }:
-          let
-            tokenPath = config.clan.core.vars.generators."subcog-jwt-secret".files."secret".path;
-            baseUrl = "https://${settings.domain}";
-            skillTemplate = ./skills/SKILL.md;
-
-            mcpConfig = {
-              type = "http";
-              url = "${baseUrl}/mcp";
-              tokenFile = tokenPath;
-            };
-
-            skillContent = builtins.readFile skillTemplate;
-          in
-          {
-            clan.core.vars.generators."subcog-jwt-secret" = {
-              share = true;
-              files."secret" = {
-                secret = true;
-              } // lib.optionalAttrs (config ? agentplot && config.agentplot.user != null) {
-                owner = config.agentplot.user;
-                group = "staff";
-              };
-              runtimeInputs = [ pkgs.openssl ];
-              script = ''
-                openssl rand -hex 32 > $out/secret
-              '';
-            };
-
-            agentplot.hmModules."subcog-${instanceName}" = { ... }: {
-              programs.claude-code = lib.mkIf settings.claude-code.mcp.enabled (lib.mkMerge [
-                {
-                  mcpServers.subcog = mcpConfig;
-                }
-                {
-                  skills.subcog = skillContent;
-                }
-              ]);
-
-              programs.agent-deck = lib.mkIf settings.agent-deck.mcp.enabled {
-                mcps.subcog = mcpConfig;
-              };
-            };
-          };
-      in
-      {
-        nixosModule = clientModule;
-        darwinModule = clientModule;
-      };
-  };
+    in
+    {
+      description = "subcog MCP client (HTTP endpoint config, JWT auth, HM delegation)";
+      inherit (tooling) interface perInstance;
+    };
 }

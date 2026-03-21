@@ -1,4 +1,4 @@
-{ ... }:
+{ mkClientTooling, ... }:
 {
   _class = "clan.service";
   manifest.name = "linkding";
@@ -144,218 +144,41 @@
 
   # ── Client Role ──────────────────────────────────────────────────────────────
 
-  roles.client = {
-    description = "linkding agent tooling (CLI wrappers, skills, downstream HM delegation)";
-
-    interface =
-      { lib, ... }:
-      let
-        clientSubmodule = lib.types.submodule {
-          options = {
-            name = lib.mkOption {
-              type = lib.types.str;
-              description = "CLI binary name and integration identifier (e.g., 'linkding', 'linkding-biz')";
-            };
-            base_url = lib.mkOption {
-              type = lib.types.str;
-              description = "Base URL of the linkding instance (e.g., 'https://links.example.com')";
-            };
-            default_tags = lib.mkOption {
-              type = lib.types.listOf lib.types.str;
-              default = [ ];
-              description = "Default tags for bookmarks created by this client";
-            };
-            cli.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = true;
-              description = "Install per-client CLI wrapper script";
-            };
-            claude-code = {
-              skill.enabled = lib.mkOption {
-                type = lib.types.bool;
-                default = true;
-                description = "Install Claude agent skill";
-              };
-              mcp.enabled = lib.mkOption {
-                type = lib.types.bool;
-                default = false;
-                description = "Not supported — linkding has no MCP server. Enable to get an evaluation error.";
-              };
-              profiles = lib.mkOption {
-                type = lib.types.attrsOf (lib.types.submodule {
-                  options.mcp.enabled = lib.mkOption {
-                    type = lib.types.bool;
-                    default = false;
-                    description = "Not supported — linkding has no MCP server.";
-                  };
-                });
-                default = { };
-                description = "Per-profile configuration";
-              };
-            };
-            agent-skills.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Distribute skill via agent-skills module (Phase 2)";
-            };
-            agent-deck.mcp.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Not supported — linkding has no MCP server. Enable to get an evaluation error.";
-            };
-            openclaw.skill.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Add OpenClaw skill (Phase 2)";
-            };
-            claude-tools.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Install via claude-plugins marketplace (Phase 2)";
+  roles.client =
+    let
+      tooling = mkClientTooling {
+        serviceName = "linkding";
+        capabilities = {
+          skills = [ ./skills/SKILL.md ];
+          cli = {
+            package = ./packages/linkding-cli;
+            wrapperName = client: client.name;
+            envVars = client: {
+              LINKDING_API_TOKEN = "$(cat ${client.tokenPath})";
+              LINKDING_BASE_URL = client.base_url;
             };
           };
-        };
-      in
-      {
-        options.clients = lib.mkOption {
-          type = lib.types.attrsOf clientSubmodule;
-          default = { };
-          description = "Named client configurations for linkding instances";
-        };
-      };
-
-    perInstance =
-      {
-        settings,
-        ...
-      }:
-      let
-        clientModule =
-          {
-            config,
-            pkgs,
-            lib,
-            ...
-          }:
-          let
-            baseCli = pkgs.callPackage ./packages/linkding-cli { };
-            skillTemplate = ./skills/SKILL.md;
-
-            mkClientConfig =
-              clientName: clientSettings:
-              let
-                tokenPath = config.clan.core.vars.generators."agentplot-linkding-${clientName}-api-token".files."token".path;
-                cliName = clientSettings.name;
-                baseUrl = clientSettings.base_url;
-
-                # Per-client CLI wrapper
-                cliWrapper = pkgs.writeShellApplication {
-                  name = cliName;
-                  runtimeInputs = [ baseCli ];
-                  text = ''
-                    LINKDING_API_TOKEN="$(cat ${tokenPath})"
-                    export LINKDING_API_TOKEN
-                    export LINKDING_BASE_URL="${baseUrl}"
-                    exec linkding-cli "$@"
-                  '';
-                };
-
-                # Per-client SKILL.md with CLI name substituted
-                clientSkill = builtins.replaceStrings
-                  [ "name: linkding" "linkding-cli" ]
-                  [ "name: ${cliName}" cliName ]
-                  (builtins.readFile skillTemplate);
-
-                # MCP assertion helper — linkding has no MCP server
-                mcpNotSupported = opt:
-                  builtins.throw "linkding client '${clientName}': ${opt} is not supported — linkding has no MCP server. Use the CLI skill instead.";
-              in
-              {
-                # Clan vars generator for this client's API token
-                vars = {
-                  "agentplot-linkding-${clientName}-api-token" = {
-                    prompts."token" = {
-                      type = "hidden";
-                      description = "API token for linkding client '${clientName}' at ${baseUrl}";
-                    };
-                    files."token" = {
-                      secret = true;
-                    } // lib.optionalAttrs (config ? agentplot && config.agentplot.user != null) {
-                      owner = config.agentplot.user;
-                      group = "staff";
-                    };
-                    script = ''
-                      cp "$prompts/token" "$out/token"
-                    '';
-                  };
-                };
-
-                # HM module for this client
-                hmModule = { ... }: {
-                  home.packages = lib.optionals clientSettings.cli.enabled [ cliWrapper ];
-
-                  programs.claude-code = lib.mkMerge [
-                    (lib.mkIf (clientSettings.claude-code.skill.enabled && !clientSettings.agent-skills.enabled) {
-                      skills.${cliName} = clientSkill;
-                    })
-                    (lib.mkIf clientSettings.claude-code.mcp.enabled
-                      (mcpNotSupported "claude-code.mcp.enabled"))
-                    (lib.mkIf (lib.any (p: p.mcp.enabled) (lib.attrValues clientSettings.claude-code.profiles))
-                      (mcpNotSupported "claude-code.profiles.*.mcp.enabled"))
-                  ];
-
-                  # Phase 2: agent-skills-nix delegation
-                  programs.agent-skills = lib.mkIf clientSettings.agent-skills.enabled {
-                    enable = true;
-                    sources."agentplot-linkding" = {
-                      path = ./skills;
-                    };
-                    skills.explicit.${cliName} = {
-                      from = "agentplot-linkding";
-                      packages = [ cliWrapper ];
-                      transform = { original, ... }:
-                        builtins.replaceStrings [ "name: linkding" "linkding-cli" ] [ "name: ${cliName}" cliName ] original;
-                    };
-                    targets.claude.enable = true;
-                  };
-
-                  programs.agent-deck = lib.mkIf clientSettings.agent-deck.mcp.enabled
-                    (mcpNotSupported "agent-deck.mcp.enabled");
-
-                  programs.openclaw = lib.mkIf clientSettings.openclaw.skill.enabled {
-                    skills = [
-                      {
-                        name = cliName;
-                        mode = "symlink";
-                        content = clientSkill;
-                      }
-                    ];
-                  };
-
-                  programs.claude-tools = lib.mkIf clientSettings.claude-tools.enabled {
-                    skills-installer.skillsByClient.claude-code.${cliName} = "symlink";
-                  };
-                };
-              };
-
-            clientConfigs = lib.mapAttrs mkClientConfig settings.clients;
-          in
-          {
-            # Register clan vars generators for all clients
-            clan.core.vars.generators = lib.mkMerge (
-              lib.mapAttrsToList (_: cc: cc.vars) clientConfigs
-            );
-
-            # Wire HM modules through the agentplot passthrough
-            agentplot.hmModules = lib.mapAttrs' (
-              clientName: cc:
-              lib.nameValuePair "linkding-${clientName}" cc.hmModule
-            ) clientConfigs;
+          secret = {
+            name = "api-token";
+            mode = "prompted";
+            description = client: "API token for linkding client '${client.name}'";
           };
-      in
-      {
-        nixosModule = clientModule;
-        darwinModule = clientModule;
+        };
+        extraClientOptions = { lib, ... }: {
+          base_url = lib.mkOption {
+            type = lib.types.str;
+            description = "Base URL of the linkding instance (e.g., 'https://links.example.com')";
+          };
+          default_tags = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            description = "Default tags for bookmarks created by this client";
+          };
+        };
       };
-  };
+    in
+    {
+      description = "linkding agent tooling (CLI wrappers, skills, downstream HM delegation)";
+      inherit (tooling) interface perInstance;
+    };
 }

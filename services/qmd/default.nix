@@ -1,4 +1,4 @@
-{ ... }:
+{ mkClientTooling, ... }:
 {
   _class = "clan.service";
   manifest.name = "qmd";
@@ -123,91 +123,26 @@
 
   # ── Client Role ──────────────────────────────────────────────────────────────
 
-  roles.client = {
-    description = "qmd MCP endpoint configuration (claude-code, agent-deck)";
-
-    interface =
-      { lib, ... }:
-      let
-        profileSubmodule = lib.types.submodule {
-          options.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Add qmd MCP server entry to this Claude Code profile";
+  roles.client =
+    let
+      tooling = mkClientTooling {
+        serviceName = "qmd";
+        capabilities = {
+          mcp = {
+            type = "http";
+            urlTemplate = client: "https://${client.domain}/mcp";
           };
         };
-      in
-      {
-        options = {
+        extraClientOptions = { lib, ... }: {
           domain = lib.mkOption {
             type = lib.types.str;
             description = "FQDN of the qmd server (e.g., qmd.swancloud.net)";
           };
-          port = lib.mkOption {
-            type = lib.types.port;
-            default = 8423;
-            description = "qmd server port";
-          };
-          claude-code = {
-            mcp.enabled = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Configure Claude MCP server (default profile)";
-            };
-            profiles = lib.mkOption {
-              type = lib.types.attrsOf profileSubmodule;
-              default = { };
-              description = "Per-profile MCP configuration";
-            };
-          };
-          agent-deck.mcp.enabled = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Add agent-deck MCP entry";
-          };
         };
       };
-
-    perInstance =
-      {
-        settings,
-        ...
-      }:
-      let
-        mcpUrl = "https://${settings.domain}/mcp";
-
-        mcpConfig = {
-          type = "http";
-          url = mcpUrl;
-        };
-
-        clientModule =
-          { lib, ... }:
-          {
-            agentplot.hmModules.qmd-client = { ... }: {
-              programs.claude-code = lib.mkMerge [
-                (lib.mkIf settings.claude-code.mcp.enabled {
-                  mcpServers.qmd = mcpConfig;
-                })
-                (lib.mkIf (settings.claude-code.profiles != { }) {
-                  profiles = lib.mapAttrs (
-                    _profileName: profileSettings:
-                    lib.mkIf profileSettings.mcp.enabled {
-                      mcpServers.qmd = mcpConfig;
-                    }
-                  ) settings.claude-code.profiles;
-                })
-              ];
-
-              programs.agent-deck = lib.mkIf settings.agent-deck.mcp.enabled {
-                mcps.qmd = mcpConfig;
-              };
-            };
-          };
-      in
-      {
-        nixosModule = clientModule;
-        darwinModule = clientModule;
-      };
-  };
+    in
+    {
+      description = "qmd MCP endpoint configuration (claude-code, agent-deck)";
+      inherit (tooling) interface perInstance;
+    };
 }

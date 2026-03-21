@@ -41,7 +41,7 @@
   };
 
   outputs =
-    { self, nixpkgs, agent-skills-nix, ... }:
+    { self, nixpkgs, agent-skills-nix, agentplot-kit, ... }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -50,14 +50,15 @@
         "x86_64-darwin"
       ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+      inherit (agentplot-kit.lib) mkClientTooling;
     in
     {
-      clan.modules.linkding = ./services/linkding;
+      clan.modules.linkding = import ./services/linkding { inherit mkClientTooling; };
       clan.modules.microvm = ./services/microvm;
-      clan.modules.gno = ./services/gno;
-      clan.modules.qmd = ./services/qmd;
-      clan.modules.subcog = ./services/subcog;
-      clan.modules.ogham-mcp = ./services/ogham-mcp;
+      clan.modules.gno = import ./services/gno { inherit mkClientTooling; };
+      clan.modules.qmd = import ./services/qmd { inherit mkClientTooling; };
+      clan.modules.subcog = import ./services/subcog { inherit mkClientTooling; };
+      clan.modules.ogham-mcp = import ./services/ogham-mcp { inherit mkClientTooling; };
 
       nixosModules.agentplot = {
         imports = [ ./modules/agentplot.nix ];
