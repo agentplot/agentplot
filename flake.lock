@@ -41,43 +41,6 @@
         "type": "github"
       }
     },
-    "claude-plugins-nix": {
-      "inputs": {
-        "claude-plugins-src": "claude-plugins-src",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1769097637,
-        "narHash": "sha256-+dy1HDc7w/B67YiAMvzp34W3EeZ5Szt83K++S2/v6Wc=",
-        "owner": "mreimbold",
-        "repo": "claude-plugins-nix",
-        "rev": "17dc97946aea1f032526299135dede0546347fe4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mreimbold",
-        "repo": "claude-plugins-nix",
-        "type": "github"
-      }
-    },
-    "claude-plugins-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1767889916,
-        "narHash": "sha256-jIXmqy/oy30FDFIoCXCO5mEDWAh54cWBemNAJv52cv4=",
-        "owner": "Kamalnrf",
-        "repo": "claude-plugins",
-        "rev": "5118d1decbd525dcced6ed1f0cd27efd82fb9a75",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Kamalnrf",
-        "repo": "claude-plugins",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -336,7 +299,6 @@
       "inputs": {
         "agent-skills-nix": "agent-skills-nix",
         "agentplot-kit": "agentplot-kit",
-        "claude-plugins-nix": "claude-plugins-nix",
         "microvm": "microvm",
         "nix-agent-deck": "nix-agent-deck",
         "nix-openclaw": "nix-openclaw",
