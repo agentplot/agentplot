@@ -47,8 +47,8 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
-      clanModules.linkding = ./services/linkding;
-      clanModules.microvm = ./services/microvm;
+      clan.modules.linkding = ./services/linkding;
+      clan.modules.microvm = ./services/microvm;
 
       nixosModules.agentplot = import ./modules/agentplot.nix;
       darwinModules.agentplot = import ./modules/agentplot.nix;
