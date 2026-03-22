@@ -29,7 +29,7 @@
 
 ## 5. OpenClaw Service Updates
 
-- [ ] 5.1 Update openclaw client role to add capabilities.extraPackages with: clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle (codegraph excluded — it's a general devtool, not openclaw-specific)
+- [ ] 5.1 Update openclaw client role to add capabilities.extraPackages with: clawhub, imsg, gogcli, remindctl, blogwatcher, memo, defuddle (codegraph excluded — it's a general devtool, not openclaw-specific)
 - [ ] 5.2 Add lobster as global HM package in openclaw client perInstance (home.packages)
 - [ ] 5.3 Create `services/openclaw/skills/SKILL-workspace.md` — openclaw-workspace skill for project scaffolding, environment setup, workflow orchestration
 - [ ] 5.4 Wire openclaw-workspace skill into capabilities.skills list

@@ -27,7 +27,7 @@ The `agentplot-kit.lib.mkClientTooling` function SHALL accept a capabilities att
 The `capabilities` attrset SHALL accept an optional `extraPackages` field (list of packages) that are installed as global Home Manager packages (`home.packages`) rather than as scoped CLI wrappers.
 
 #### Scenario: Service with extra packages
-- **WHEN** a service calls `mkClientTooling` with `capabilities.extraPackages = [ lobster clawhub ppls ]`
+- **WHEN** a service calls `mkClientTooling` with `capabilities.extraPackages = [ lobster clawhub ]`
 - **THEN** the generated perInstance SHALL add those packages to `home.packages` in the HM module for each enabled client
 
 #### Scenario: Extra packages coexist with CLI wrapper
