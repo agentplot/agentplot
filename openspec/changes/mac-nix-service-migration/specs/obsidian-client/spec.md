@@ -25,15 +25,15 @@ The obsidian client role SHALL declare `capabilities.skills` with two skill file
 - **WHEN** the obsidian-para skill is active and a client has `vaults = [ "Business" "Personal" ]`
 - **THEN** the skill content SHALL describe PARA-based routing rules that map note categories to the configured vault names
 
-### Requirement: Obsidian client exposes per-profile vault list
-The obsidian client role SHALL expose `vaults` (list of strings) and `vaultBasePath` (string with default) via `extraClientOptions`, allowing each client to declare which Obsidian vaults it manages.
+### Requirement: Obsidian client exposes per-profile vault list as an agentplot profile concept
+The obsidian client role SHALL expose `vaults` (list of strings) and `vaultBasePath` (string with default) via `extraClientOptions`. Vault-to-profile mapping is part of agentplot's profile system — each agentplot profile declares which vaults it uses. The consumer (swancloud) enables profiles but does NOT define vault mappings; those are owned by agentplot.
 
 #### Scenario: Business profile with single vault
-- **WHEN** an obsidian client is configured with `vaults = [ "Business" ]` and default vaultBasePath
+- **WHEN** an agentplot profile defines an obsidian client with `vaults = [ "Business" ]` and default vaultBasePath
 - **THEN** the client's skill and CLI SHALL reference the "Business" vault at the default base path
 
 #### Scenario: Personal profile with multiple vaults
-- **WHEN** an obsidian client is configured with `vaults = [ "Personal" "Creative" ]`
+- **WHEN** an agentplot profile defines an obsidian client with `vaults = [ "Personal" "Creative" ]`
 - **THEN** the client's skill and CLI SHALL reference both vaults
 
 ### Requirement: Obsidian client supports syncthing vault sync toggle

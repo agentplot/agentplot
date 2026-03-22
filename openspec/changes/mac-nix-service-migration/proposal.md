@@ -6,10 +6,11 @@ The __mac-nix repo (precursor to swancloud) still contains service definitions a
 
 - **New miniflux clanService** with guest role (microvm, PostgreSQL, Caddy TLS, borgbackup, kanidm OIDC) and client role (restish CLI, miniflux skill) — mirrors linkding pattern
 - **New obsidian clanService** (client-only) with obsidian-cli, obsidian skill, obsidian-para skill, and syncthing vault sync — vault list configured per agentplot profile
+- **New tana clanService** (client-only) with tana-export skill — separate service for Tana knowledge management tooling
 - **New email clanService** (client-only for now) with himalaya CLI and email-management skill — generic module, account config stays in swancloud
-- **Expanded openclaw client role** to bundle full CLI ecosystem: lobster (HM global), clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle, codegraph, and openclaw-workspace skill
+- **Expanded openclaw client role** to bundle full CLI ecosystem: lobster (HM global), clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle, and openclaw-workspace skill
 - **Expanded paperless client role** to include enex2paperless package and generic evernote-convert skill
-- **Skills routing**: miniflux, obsidian (+para), openclaw-workspace, evernote-convert, tana-export, and email skills bundled in agentplot; sheets-cli stays in agentplot-kit
+- **Skills routing**: miniflux, obsidian (+para), openclaw-workspace, evernote-convert, tana-export, and email skills bundled in agentplot with their respective services; sheets-cli stays in agentplot-kit
 
 ## Capabilities
 
@@ -18,16 +19,17 @@ The __mac-nix repo (precursor to swancloud) still contains service definitions a
 - `miniflux-client`: Miniflux client role — restish CLI profile, miniflux agent skill
 - `obsidian-client`: Obsidian client role — obsidian-cli, obsidian skill, obsidian-para skill, syncthing vault sync, per-profile vault mapping
 - `email-client`: Email client role — himalaya CLI, email-management skill, generic account interface
+- `tana-client`: Tana client role — tana-export skill for Tana knowledge management export
 
 ### Modified Capabilities
-- `openclaw-skill-delegation`: OpenClaw client now bundles full CLI ecosystem (lobster, clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle, codegraph) and openclaw-workspace skill
+- `openclaw-skill-delegation`: OpenClaw client now bundles full CLI ecosystem (lobster, clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle) and openclaw-workspace skill. Note: codegraph is a general development tool available independently, not bundled with openclaw
 - `client-tooling-framework`: mkClientTooling needs to support client-only services (no server role) and HM-global package installs (lobster)
 
 ## Impact
 
-- **services/**: New directories for miniflux, obsidian, email; updates to openclaw and paperless
-- **flake.nix**: New clan.modules exports (miniflux, obsidian, email), new package outputs, updated openclaw/paperless definitions
+- **services/**: New directories for miniflux, obsidian, email, tana; updates to openclaw and paperless
+- **flake.nix**: New clan.modules exports (miniflux, obsidian, email, tana), new package outputs, updated openclaw/paperless definitions
 - **modules/agentplot.nix**: No changes expected — delegation adapter already handles arbitrary service modules
 - **tests/**: New composition tests for client-only services and multi-package client roles
-- **agentplot-kit**: May need mkClientTooling enhancement for client-only services and global HM packages (separate PR)
+- **agentplot-kit**: mkClientTooling enhancement for `extraPackages` support (client-only services and global HM packages) is in scope for this change
 - **swancloud**: Consuming inventory will need to wire new services (out of scope for this change)

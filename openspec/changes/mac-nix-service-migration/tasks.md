@@ -22,9 +22,14 @@
 - [ ] 4.1 Create `services/email/default.nix` with client-only role using mkClientTooling — himalaya CLI package, email-management skill, manifest.name = "email"
 - [ ] 4.2 Create `services/email/skills/SKILL.md` — email-management skill covering inbox triage, folder management, search, compose, reply, and workflow automation via himalaya
 
+## 4b. Tana Service — Client-Only
+
+- [ ] 4b.1 Create `services/tana/default.nix` with client-only role using mkClientTooling — tana-export skill, manifest.name = "tana"
+- [ ] 4b.2 Create `services/tana/skills/SKILL-tana-export.md` — tana-export skill for Tana knowledge management export
+
 ## 5. OpenClaw Service Updates
 
-- [ ] 5.1 Update openclaw client role to add capabilities.extraPackages with: clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle, codegraph
+- [ ] 5.1 Update openclaw client role to add capabilities.extraPackages with: clawhub, ppls, imsg, gogcli, remindctl, blogwatcher, memo, defuddle (codegraph excluded — it's a general devtool, not openclaw-specific)
 - [ ] 5.2 Add lobster as global HM package in openclaw client perInstance (home.packages)
 - [ ] 5.3 Create `services/openclaw/skills/SKILL-workspace.md` — openclaw-workspace skill for project scaffolding, environment setup, workflow orchestration
 - [ ] 5.4 Wire openclaw-workspace skill into capabilities.skills list
@@ -32,25 +37,25 @@
 ## 6. Paperless Service Updates
 
 - [ ] 6.1 Add enex2paperless to paperless client role packages (via capabilities.extraPackages or cli)
-- [ ] 6.2 Create or port `services/paperless/skills/SKILL-evernote-convert.md` — generic evernote-convert skill (remove Mac-Studio-specific folder references)
+- [ ] 6.2 Create or port `services/paperless/skills/SKILL-evernote-convert.md` — generic evernote-convert skill: replace all hardcoded Mac-Studio folder paths with environment variables ($ENEX_INBOX_DIR, $ENEX_ARCHIVE_DIR, $ENEX_PROJECT_DIR). Skill should reference configurable directories for inbox, archive, and project rather than absolute paths. See paperless-client-updates spec for details.
 
 ## 7. Skills Routing
 
-- [ ] 7.1 Move tana-export skill to `services/obsidian/skills/SKILL-tana-export.md` (knowledge-management adjacent)
+- [ ] 7.1 Place tana-export skill at `services/tana/skills/SKILL-tana-export.md` (tana is its own client-only service)
 - [ ] 7.2 Verify sheets-cli skill remains in agentplot-kit (no action needed if already there)
 - [ ] 7.3 Ensure all service-bundled skills are referenced in their respective capabilities.skills lists
 
 ## 8. Flake Integration
 
-- [ ] 8.1 Add miniflux, obsidian, email to `clan.modules` exports in flake.nix
+- [ ] 8.1 Add miniflux, obsidian, email, tana to `clan.modules` exports in flake.nix
 - [ ] 8.2 Add miniflux-cli to `packages.<system>` outputs in flake.nix
 - [ ] 8.3 Update openclaw and paperless clan.modules definitions if needed for new packages/skills
 
-## 9. Framework Dependencies (agentplot-kit)
+## 9. Framework Updates (agentplot-kit)
 
 - [ ] 9.1 Verify mkClientTooling supports client-only services (no server role) — test with obsidian
-- [ ] 9.2 Check if mkClientTooling supports extraPackages; if not, file agentplot-kit change for global HM package support
-- [ ] 9.3 Determine obsidian-cli package source (llm-agents.nix overlay or standalone derivation)
+- [ ] 9.2 Add `extraPackages` support to mkClientTooling for global HM package installs (in scope for this change)
+- [ ] 9.3 Source obsidian-cli from nixpkgs if available; fall back to app-bundled CLI
 
 ## 10. Tests
 

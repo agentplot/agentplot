@@ -2,7 +2,7 @@
 
 The __mac-nix repo was the original infrastructure-as-code repository before swancloud. Most core services (linkding, paperless, openclaw gateway, skills infra, agent-deck, claude-code, secretspec) have been ported to swancloud/agentplot. Several services and agent tooling bundles remain in __mac-nix that need proper agentplot clanService definitions: Miniflux, Obsidian, email, and expanded package sets for OpenClaw and Paperless.
 
-AgentPlot already has a mature pattern: linkding, gno, qmd, subcog, and ogham-mcp all follow the `_class = "clan.service"` + `mkClientTooling` pattern. This change adds three new services and updates two existing ones, all following established conventions.
+AgentPlot already has a mature pattern: linkding, gno, qmd, subcog, and ogham-mcp all follow the `_class = "clan.service"` + `mkClientTooling` pattern. This change adds four new services (miniflux, obsidian, email, tana) and updates two existing ones (openclaw, paperless), all following established conventions.
 
 ## Goals / Non-Goals
 
@@ -10,7 +10,8 @@ AgentPlot already has a mature pattern: linkding, gno, qmd, subcog, and ogham-mc
 - Create miniflux clanService with guest (microvm) and client (restish + skill) roles matching the linkding pattern
 - Create obsidian clanService (client-only) with obsidian-cli, skills, syncthing, and per-profile vault mapping
 - Create email clanService (client-only) with himalaya CLI and email-management skill, keeping it generic
-- Expand openclaw client role to bundle its full CLI ecosystem and workspace skill
+- Create tana clanService (client-only) with tana-export skill
+- Expand openclaw client role to bundle its full CLI ecosystem (minus codegraph, which is a general devtool) and workspace skill
 - Expand paperless client role to include enex2paperless and generic evernote-convert skill
 - Route service-bundled skills into agentplot, generic skills into agentplot-kit
 
@@ -18,7 +19,7 @@ AgentPlot already has a mature pattern: linkding, gno, qmd, subcog, and ogham-mc
 - Modifying swancloud inventory (consuming side wiring happens in a separate change)
 - Removing services from __mac-nix (cleanup happens after verification)
 - Building an email server component (future work; module naming accommodates it)
-- Changing agentplot-kit's mkClientTooling API (if client-only and global packages need framework changes, that's a separate agentplot-kit PR)
+- Changing agentplot-kit's mkClientTooling API beyond what's needed for this change (adding `extraPackages` support IS in scope; other API changes are not)
 
 ## Decisions
 
@@ -32,14 +33,16 @@ Obsidian and email have no `roles.server` / `roles.guest`. They define only `rol
 
 **Alternative considered:** Creating a stub server role. Rejected as unnecessary complexity — the clanService pattern doesn't mandate paired roles.
 
-### D3: Obsidian vault mapping uses extraClientOptions
-Each obsidian client declares its vault list via `extraClientOptions.vaults` (list of strings). Profile-to-vault mapping is expressed at the consumer level (swancloud), not in agentplot. Agentplot defines the interface; swancloud populates it.
+### D3: Obsidian vault mapping is an agentplot profile concept
+Each obsidian client declares its vault list via `extraClientOptions.vaults` (list of strings). Vault-to-profile mapping is part of agentplot's profile system — each agentplot profile declares which vaults it uses. This is NOT delegated to the consumer; agentplot owns the profile-to-vault relationship.
 
-Example consumer config:
+Example agentplot profile config:
 ```nix
 clients.business = { name = "obsidian-biz"; vaults = [ "Business" ]; };
 clients.personal = { name = "obsidian"; vaults = [ "Personal" "Creative" ]; };
 ```
+
+The consumer (swancloud) only needs to enable the profiles it wants; the vault mapping comes from agentplot's profile definitions.
 
 ### D4: Obsidian syncthing is an extraClientOption toggle
 Syncthing vault sync is declared as `extraClientOptions.syncthing.enable` (bool, default true). The perInstance generates HM module config for syncthing folder declarations per vault. Actual syncthing device/key config stays in swancloud.
@@ -56,23 +59,36 @@ The email clanService defines `extraClientOptions` for account-agnostic settings
 - `services/miniflux/` — room for future reader features
 - `services/obsidian/` — room for future publish/sync server
 - `services/email/` — room for future self-hosted mail server role
+- `services/tana/` — room for future Tana API integration or sync
 
 ### D8: Skills bundled with their service in agentplot
-Skills that are tightly coupled to a service (miniflux, obsidian, obsidian-para, openclaw-workspace, evernote-convert, email-management, tana-export) live in `services/<name>/skills/`. Generic skills (sheets-cli) stay in agentplot-kit. tana-export is temporarily housed in the obsidian service since it's note/knowledge-management adjacent.
+Skills that are tightly coupled to a service (miniflux, obsidian, obsidian-para, openclaw-workspace, evernote-convert, email-management, tana-export) live in `services/<name>/skills/`. Generic skills (sheets-cli) stay in agentplot-kit. tana-export lives in `services/tana/skills/` as tana is its own client-only service.
+
+### D9: Obsidian CLI sourced from nixpkgs with app fallback
+obsidian-cli should be sourced from nixpkgs if available. If nixpkgs doesn't package it yet, fall back to the app-bundled CLI (the user has a paid early-release version with improvements). This is a resolved decision, not an open question.
+
+### D10: Lobster workflow registration is consumer-level
+Lobster workflow registration (e.g., enex-convert.yaml) happens at the consumer level (swancloud). Agentplot provides lobster as a global tool via the openclaw client role; workflow YAML files and their secret injection (e.g., PAPERLESS_API_TOKEN) are configured in the consuming inventory, not in agentplot.
+
+### D11: codegraph is a general devtool, not openclaw-specific
+codegraph is a general-purpose development tool and should NOT be bundled exclusively with openclaw. It should be available independently (e.g., in home-packages or as its own lightweight client-only service/module). It is removed from the openclaw extraPackages list.
+
+### D12: Tana is a standalone client-only service
+Tana gets its own service at `services/tana/` rather than being bundled under obsidian. Although both are knowledge-management tools, they have independent toolchains and export workflows. The tana service follows the same client-only pattern as obsidian and email, with its client role bundling the tana-export skill.
 
 ## Risks / Trade-offs
 
-**[mkClientTooling may need changes for client-only + global packages]** → If mkClientTooling doesn't support `extraPackages` (packages installed globally, not as CLI wrappers), the openclaw expansion may require an agentplot-kit change. Mitigation: check mkClientTooling's current capabilities; if needed, file a separate agentplot-kit change.
+**[mkClientTooling needs extraPackages support]** → mkClientTooling currently lacks `extraPackages` (packages installed globally, not as CLI wrappers). Adding this support is in scope for this change. The client-tooling-framework spec covers the required API additions.
 
 **[Miniflux OCI image pinning]** → Using `:latest` tag (matching linkding pattern) means no reproducible builds. Mitigation: same pattern as linkding, acceptable for self-hosted services that auto-update.
 
 **[Obsidian vault paths are user-specific]** → Vault paths like `~/Documents/Obsidian/Business` differ per machine. Mitigation: extraClientOptions.vaultBasePath with a sane default, overridable per consumer.
 
-**[Large number of openclaw packages]** → 12 packages in one client role is heavy. Mitigation: all are small CLI tools; the alternative (splitting into sub-services) adds complexity without benefit.
+**[Large number of openclaw packages]** → 11 packages in one client role is heavy (codegraph removed — it's a general devtool). Mitigation: all are small CLI tools; the alternative (splitting into sub-services) adds complexity without benefit.
 
 ## Migration Plan
 
-1. Create new service directories and definitions (miniflux, obsidian, email)
+1. Create new service directories and definitions (miniflux, obsidian, email, tana)
 2. Update existing service definitions (openclaw, paperless)
 3. Update flake.nix with new clan.modules exports and package outputs
 4. Add composition tests for client-only services and multi-package clients
@@ -80,10 +96,10 @@ Skills that are tightly coupled to a service (miniflux, obsidian, obsidian-para,
 6. Test with `nix flake check` and evaluation tests
 7. Update swancloud inventory to consume new services (separate change)
 
+**Consumer dependency:** The enex-convert.yaml lobster workflow stays in swancloud, not agentplot. Swancloud needs a corresponding change to set up lobster workflow registration and secret injection (PAPERLESS_API_TOKEN) for this pipeline.
+
 Rollback: revert commits. No data migration involved — these are new module definitions.
 
 ## Open Questions
 
-- Does mkClientTooling already support `extraPackages` or do we need an agentplot-kit change?
-- Should tana-export live in obsidian service or get its own service?
-- What's the obsidian-cli package source? (overlay from llm-agents.nix or standalone derivation?)
+- (None remaining — all resolved, see decisions above)
