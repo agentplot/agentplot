@@ -81,6 +81,7 @@
         {
           linkding-cli = pkgs.callPackage ./services/linkding/packages/linkding-cli { };
           miniflux-cli = pkgs.callPackage ./services/miniflux/packages/miniflux-cli { };
+          paperless-cli = pkgs.callPackage ./services/paperless/packages/paperless-cli { };
         }
       );
     };

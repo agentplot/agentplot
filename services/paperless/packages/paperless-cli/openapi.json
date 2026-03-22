@@ -1,0 +1,259 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Paperless-ngx API",
+    "version": "2.0",
+    "description": "Paperless-ngx document management REST API"
+  },
+  "servers": [
+    {
+      "url": "{base_url}/api",
+      "variables": {
+        "base_url": {
+          "default": "http://localhost:8000"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/documents/": {
+      "get": {
+        "operationId": "list-documents",
+        "summary": "List all documents",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer" } },
+          { "name": "query", "in": "query", "schema": { "type": "string" }, "description": "Full-text search query" },
+          { "name": "ordering", "in": "query", "schema": { "type": "string" } },
+          { "name": "tags__id__all", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated tag IDs (AND match)" },
+          { "name": "correspondent__id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "document_type__id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "storage_path__id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "added__date__gt", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "created__date__gt", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": { "200": { "description": "Paginated list of documents" } }
+      },
+      "post": {
+        "operationId": "create-document",
+        "summary": "Upload a new document",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["document"],
+                "properties": {
+                  "document": { "type": "string", "format": "binary" },
+                  "title": { "type": "string" },
+                  "correspondent": { "type": "integer" },
+                  "document_type": { "type": "integer" },
+                  "tags": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Task ID for async processing" } }
+      }
+    },
+    "/documents/{id}/": {
+      "get": {
+        "operationId": "get-document",
+        "summary": "Get document details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Document details" } }
+      },
+      "patch": {
+        "operationId": "update-document",
+        "summary": "Update document metadata",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "correspondent": { "type": "integer" },
+                  "document_type": { "type": "integer" },
+                  "tags": { "type": "array", "items": { "type": "integer" } },
+                  "archive_serial_number": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated document" } }
+      },
+      "delete": {
+        "operationId": "delete-document",
+        "summary": "Delete a document",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Document deleted" } }
+      }
+    },
+    "/documents/{id}/download/": {
+      "get": {
+        "operationId": "download-document",
+        "summary": "Download original document file",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Document file" } }
+      }
+    },
+    "/documents/{id}/preview/": {
+      "get": {
+        "operationId": "preview-document",
+        "summary": "Download archived (OCR'd) document",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Archived document file" } }
+      }
+    },
+    "/documents/{id}/thumb/": {
+      "get": {
+        "operationId": "get-document-thumbnail",
+        "summary": "Get document thumbnail",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Thumbnail image" } }
+      }
+    },
+    "/tags/": {
+      "get": {
+        "operationId": "list-tags",
+        "summary": "List all tags",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "List of tags" } }
+      },
+      "post": {
+        "operationId": "create-tag",
+        "summary": "Create a new tag",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "color": { "type": "string" },
+                  "is_inbox_tag": { "type": "boolean" },
+                  "matching_algorithm": { "type": "integer" },
+                  "match": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Tag created" } }
+      }
+    },
+    "/correspondents/": {
+      "get": {
+        "operationId": "list-correspondents",
+        "summary": "List all correspondents",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "List of correspondents" } }
+      },
+      "post": {
+        "operationId": "create-correspondent",
+        "summary": "Create a new correspondent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "matching_algorithm": { "type": "integer" },
+                  "match": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Correspondent created" } }
+      }
+    },
+    "/document_types/": {
+      "get": {
+        "operationId": "list-document-types",
+        "summary": "List all document types",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "List of document types" } }
+      },
+      "post": {
+        "operationId": "create-document-type",
+        "summary": "Create a new document type",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "matching_algorithm": { "type": "integer" },
+                  "match": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Document type created" } }
+      }
+    },
+    "/storage_paths/": {
+      "get": {
+        "operationId": "list-storage-paths",
+        "summary": "List all storage paths",
+        "responses": { "200": { "description": "List of storage paths" } }
+      }
+    },
+    "/tasks/": {
+      "get": {
+        "operationId": "list-tasks",
+        "summary": "List background tasks",
+        "responses": { "200": { "description": "List of tasks" } }
+      }
+    },
+    "/documents/post_document/": {
+      "post": {
+        "operationId": "upload-document",
+        "summary": "Upload document for processing (async)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["document"],
+                "properties": {
+                  "document": { "type": "string", "format": "binary" },
+                  "title": { "type": "string" },
+                  "correspondent": { "type": "integer" },
+                  "document_type": { "type": "integer" },
+                  "tags": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Accepted for processing" } }
+      }
+    }
+  }
+}

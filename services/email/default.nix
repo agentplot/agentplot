@@ -19,6 +19,18 @@
             envVars = _client: { };
           };
         };
+        extraClientOptions = { lib, ... }: {
+          default_folder = lib.mkOption {
+            type = lib.types.str;
+            default = "INBOX";
+            description = "Default folder to list messages from";
+          };
+          notification.enabled = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Enable new mail notifications";
+          };
+        };
       };
     in
     {
