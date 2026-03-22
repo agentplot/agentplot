@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   cfg = config.agentplot.oidc;
 
@@ -86,12 +86,20 @@ in
   config = lib.mkIf (enabledClients != { }) {
     clan.core.vars.generators = lib.mapAttrs' (
       clientName: clientCfg:
-      lib.nameValuePair "oidc-${clientName}" {
+      lib.nameValuePair "oidc-${clientName}" ({
         share = true;
         files."client-secret" = {
           secret = true;
           mode = "0440";
         };
+        runtimeInputs = [ pkgs.openssl ];
+      } // (if clientCfg.provider == "kanidm" then {
+        # kanidm: auto-generate secret (fleet controls the IdP)
+        script = ''
+          openssl rand -hex 32 > $out/client-secret
+        '';
+      } else {
+        # generic: prompt for secret (created in external IdP dashboard)
         prompts."client-secret" = {
           type = "hidden";
           description = "OIDC client secret for '${clientName}' (issuer: ${clientCfg.issuerUrl})";
@@ -99,7 +107,7 @@ in
         script = ''
           cp "$prompts/client-secret" "$out/client-secret"
         '';
-      }
+      }))
     ) enabledClients;
   };
 }
