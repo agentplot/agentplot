@@ -178,7 +178,7 @@
       tooling = mkClientTooling {
         serviceName = "ogham-mcp";
         capabilities = {
-          skills = [ ./skills/SKILL.md ./skills/cli.md ];
+          skills = [ ./skills/cli/SKILL.md ];
           mcp = {
             type = "sse";
             urlTemplate = client: "${client.url}/sse";

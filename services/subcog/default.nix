@@ -111,7 +111,7 @@
       tooling = mkClientTooling {
         serviceName = "subcog";
         capabilities = {
-          skills = [ ./skills/SKILL.md ./skills/cli.md ];
+          skills = [ ./skills/cli/SKILL.md ];
           cli = {
             package = ./packages/subcog-cli;
             wrapperName = client: "subcog-${client.name}";

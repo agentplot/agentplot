@@ -127,7 +127,6 @@
       tooling = mkClientTooling {
         serviceName = "qmd";
         capabilities = {
-          skills = [ ./skills/SKILL.md ];
           cli = {
             package = ./packages/qmd-cli;
             wrapperName = client: "qmd-${client.name}";

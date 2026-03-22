@@ -123,7 +123,7 @@
       tooling = mkClientTooling {
         serviceName = "gno";
         capabilities = {
-          skills = [ ./skills/SKILL.md ];
+          skills = [ ./skills/cli/SKILL.md ];
           cli = {
             package = ./packages/gno-cli;
             wrapperName = client: "gno-${client.name}";
