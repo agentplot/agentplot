@@ -40,25 +40,54 @@
             ...
           }:
           let
+            dbPasswordPath = config.clan.core.vars.generators."subcog-db-password".files."password".path;
             tlsConfig = config.caddy-cloudflare.tls;
             port = toString settings.port;
           in
           {
+            clan.core.vars.generators."subcog-db-password" = {
+              share = true;
+              files."password" = {
+                secret = true;
+                mode = "0440";
+              };
+              runtimeInputs = [ pkgs.openssl ];
+              script = ''
+                openssl rand -hex 32 > $out/password
+              '';
+            };
+
+            systemd.services.subcog-env = {
+              description = "Prepare subcog environment file";
+              before = [ "subcog.service" ];
+              requiredBy = [ "subcog.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+              script = ''
+                DB_PASSWORD=$(cat ${dbPasswordPath})
+                printf '%s\n' \
+                  "SUBCOG_DATABASE_URL=postgresql://subcog:$DB_PASSWORD@10.0.0.1/subcog" \
+                  "SUBCOG_PORT=${port}" \
+                  "SUBCOG_HOST=127.0.0.1" \
+                  > /run/subcog.env
+              '';
+            };
+
             systemd.services.subcog = {
               description = "subcog persistent memory server";
-              after = [ "network.target" ];
+              after = [
+                "network.target"
+                "subcog-env.service"
+              ];
               wantedBy = [ "multi-user.target" ];
-
-              environment = {
-                SUBCOG_DATABASE_URL = "postgresql://subcog@10.0.0.1/subcog";
-                SUBCOG_PORT = port;
-                SUBCOG_HOST = "127.0.0.1";
-              };
 
               serviceConfig = {
                 Type = "simple";
                 User = "subcog";
                 Group = "subcog";
+                EnvironmentFile = "/run/subcog.env";
                 ExecStart = "${pkgs.llm-agents.subcog}/bin/subcog";
                 Restart = "on-failure";
                 RestartSec = 5;
