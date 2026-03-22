@@ -60,6 +60,7 @@
       };
       clan.modules.paperless = import ./services/paperless {
         inherit mkClientTooling;
+        enex2paperless = nix-openclaw.packages.enex2paperless or null;
       };
 
       nixosModules.agentplot = {
