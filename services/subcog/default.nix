@@ -40,55 +40,25 @@
             ...
           }:
           let
-            jwtSecretPath = config.clan.core.vars.generators."subcog-jwt-secret".files."secret".path;
             tlsConfig = config.caddy-cloudflare.tls;
             port = toString settings.port;
           in
           {
-            clan.core.vars.generators."subcog-jwt-secret" = {
-              share = true;
-              files."secret" = {
-                secret = true;
-                mode = "0440";
-              };
-              runtimeInputs = [ pkgs.openssl ];
-              script = ''
-                openssl rand -hex 32 > $out/secret
-              '';
-            };
-
-            systemd.services.subcog-env = {
-              description = "Prepare subcog environment file";
-              before = [ "subcog.service" ];
-              requiredBy = [ "subcog.service" ];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-              script = ''
-                JWT_SECRET=$(cat ${jwtSecretPath})
-                printf '%s\n' \
-                  "SUBCOG_DATABASE_URL=postgresql://subcog@10.0.0.1/subcog" \
-                  "SUBCOG_JWT_SECRET=$JWT_SECRET" \
-                  "SUBCOG_PORT=${port}" \
-                  "SUBCOG_HOST=127.0.0.1" \
-                  > /run/subcog.env
-              '';
-            };
-
             systemd.services.subcog = {
               description = "subcog persistent memory server";
-              after = [
-                "network.target"
-                "subcog-env.service"
-              ];
+              after = [ "network.target" ];
               wantedBy = [ "multi-user.target" ];
+
+              environment = {
+                SUBCOG_DATABASE_URL = "postgresql://subcog@10.0.0.1/subcog";
+                SUBCOG_PORT = port;
+                SUBCOG_HOST = "127.0.0.1";
+              };
 
               serviceConfig = {
                 Type = "simple";
                 User = "subcog";
                 Group = "subcog";
-                EnvironmentFile = "/run/subcog.env";
                 ExecStart = "${pkgs.llm-agents.subcog}/bin/subcog";
                 Restart = "on-failure";
                 RestartSec = 5;
@@ -141,15 +111,14 @@
       tooling = mkClientTooling {
         serviceName = "subcog";
         capabilities = {
-          skills = [ ./skills/SKILL.md ];
+          skills = [ ./skills/SKILL.md ./skills/cli.md ];
+          cli = {
+            package = ./packages/subcog-cli;
+            wrapperName = client: "subcog-${client.name}";
+          };
           mcp = {
             type = "http";
             urlTemplate = client: "https://${client.domain}/mcp";
-          };
-          secret = {
-            name = "jwt-secret";
-            mode = "generated";
-            description = client: "JWT secret for subcog client '${client.name}'";
           };
         };
         extraClientOptions = { lib, ... }: {
@@ -166,7 +135,7 @@
       };
     in
     {
-      description = "subcog MCP client (HTTP endpoint config, JWT auth, HM delegation)";
+      description = "subcog MCP client (HTTP endpoint, CLI, skills, HM delegation)";
       inherit (tooling) interface perInstance;
     };
 }

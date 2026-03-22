@@ -81,7 +81,7 @@
               environment.GNO_CONFIG = toString gnoConfigFile;
 
               serviceConfig = {
-                ExecStart = "${pkgs.llm-agents.gno}/bin/gno";
+                ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
                 DynamicUser = true;
@@ -123,6 +123,11 @@
       tooling = mkClientTooling {
         serviceName = "gno";
         capabilities = {
+          skills = [ ./skills/SKILL.md ];
+          cli = {
+            package = ./packages/gno-cli;
+            wrapperName = client: "gno-${client.name}";
+          };
           mcp = {
             type = "http";
             urlTemplate = client: "https://${client.domain}/mcp";
@@ -137,7 +142,7 @@
       };
     in
     {
-      description = "gno MCP endpoint configuration and HM module delegation";
+      description = "gno agent tooling (CLI, skills, MCP endpoint, HM delegation)";
       inherit (tooling) interface perInstance;
     };
 }

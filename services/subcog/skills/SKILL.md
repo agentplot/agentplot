@@ -7,10 +7,6 @@ description: Persistent agent memory with hybrid search (vector + keyword + grap
 
 Subcog provides persistent, structured memory for AI agents via MCP tools over HTTP. It supports hybrid search (vector similarity + keyword + graph traversal), entity-centric knowledge graphs, and namespace-scoped retention policies.
 
-## Authentication
-
-Authentication is handled via JWT bearer token in HTTP headers. No manual setup is needed — the MCP server connection handles auth automatically.
-
 ## Core Concepts
 
 - **Memories**: Discrete pieces of information with content, metadata, and optional entity associations

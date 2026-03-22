@@ -127,6 +127,11 @@
       tooling = mkClientTooling {
         serviceName = "qmd";
         capabilities = {
+          skills = [ ./skills/SKILL.md ];
+          cli = {
+            package = ./packages/qmd-cli;
+            wrapperName = client: "qmd-${client.name}";
+          };
           mcp = {
             type = "http";
             urlTemplate = client: "https://${client.domain}/mcp";
@@ -141,7 +146,7 @@
       };
     in
     {
-      description = "qmd MCP endpoint configuration (claude-code, agent-deck)";
+      description = "qmd agent tooling (CLI, skills, MCP endpoint, HM delegation)";
       inherit (tooling) interface perInstance;
     };
 }
