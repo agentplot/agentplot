@@ -51,7 +51,7 @@
       clan.modules.ogham-mcp = import ./services/ogham-mcp { inherit mkClientTooling; };
       clan.modules.miniflux = import ./services/miniflux { inherit mkClientTooling; };
       clan.modules.obsidian = import ./services/obsidian { inherit mkClientTooling; };
-      clan.modules.email = import ./services/email { inherit mkClientTooling; };
+      clan.modules.himalaya = import ./services/himalaya { inherit mkClientTooling; };
       clan.modules.tana = import ./services/tana { inherit mkClientTooling; };
       clan.modules.openclaw = import ./services/openclaw {
         inherit mkClientTooling;

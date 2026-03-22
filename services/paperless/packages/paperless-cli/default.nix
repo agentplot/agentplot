@@ -1,32 +1,20 @@
-{
-  writeShellApplication,
-  restish,
-}:
+{ writeShellApplication, restish }:
 writeShellApplication {
   name = "paperless-cli";
-  runtimeInputs = [
-    restish
-  ];
+  runtimeInputs = [ restish ];
   text = ''
     : "''${PAPERLESS_BASE_URL:?PAPERLESS_BASE_URL not set}"
     : "''${PAPERLESS_API_TOKEN:?PAPERLESS_API_TOKEN not set}"
 
-    TMPHOME=$(mktemp -d)
-    trap 'rm -rf "$TMPHOME"' EXIT
+    TMPCONF=$(mktemp -d)
+    trap 'rm -rf "$TMPCONF"' EXIT
+    mkdir -p "$TMPCONF/restish"
 
-    # restish uses configdir: ~/Library/Application Support on macOS, ~/.config on Linux
-    if [[ "$(uname)" == "Darwin" ]]; then
-      CFGDIR="$TMPHOME/Library/Application Support/restish"
-    else
-      CFGDIR="$TMPHOME/.config/restish"
-    fi
-    mkdir -p "$CFGDIR"
-
-    cat > "$CFGDIR/apis.json" << APIEOF
+    cat > "$TMPCONF/restish/apis.json" << APIEOF
     {
       "paperless": {
         "base": "$PAPERLESS_BASE_URL",
-        "spec_files": ["${./openapi.json}"],
+        "spec_files": ["$PAPERLESS_BASE_URL/api/schema/?format=json"],
         "profiles": {
           "default": {
             "headers": {
@@ -38,6 +26,6 @@ writeShellApplication {
     }
     APIEOF
 
-    HOME="$TMPHOME" exec restish paperless "$@"
+    XDG_CONFIG_HOME="$TMPCONF" exec restish paperless "$@"
   '';
 }
