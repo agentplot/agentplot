@@ -44,8 +44,8 @@ clients.personal = { name = "obsidian"; vaults = [ "Personal" "Creative" ]; };
 
 The consumer (swancloud) only needs to enable the profiles it wants; the vault mapping comes from agentplot's profile definitions.
 
-### D4: Obsidian syncthing is an extraClientOption toggle
-Syncthing vault sync is declared as `extraClientOptions.syncthing.enable` (bool, default true). The perInstance generates HM module config for syncthing folder declarations per vault. Actual syncthing device/key config stays in swancloud.
+### D4: Obsidian syncthing is an extraClientOption toggle; folder wiring is consumer-level
+Syncthing vault sync is declared as `extraClientOptions.syncthing.enable` (bool, default true). Agentplot exposes the `syncthing.enable` flag and vault paths via the interface but does NOT generate syncthing folder declarations in the perInstance HM module. The actual syncthing folder wiring (device IDs, keys, sharing topology, folder declarations) belongs in the consuming inventory (swancloud), which reads the exposed vault paths and enable flag to configure its own syncthing folders.
 
 ### D5: Lobster as a global HM package in openclaw client
 Lobster is listed in openclaw's `capabilities.cli.extraPackages` (or equivalent). It installs globally via Home Manager, not scoped to a specific openclaw microvm. This means it appears in the user's PATH when the openclaw client role is enabled.
@@ -75,6 +75,9 @@ codegraph is a general-purpose development tool and should NOT be bundled exclus
 
 ### D12: Tana is a standalone client-only service
 Tana gets its own service at `services/tana/` rather than being bundled under obsidian. Although both are knowledge-management tools, they have independent toolchains and export workflows. The tana service follows the same client-only pattern as obsidian and email, with its client role bundling the tana-export skill.
+
+### D13: Obsidian vault backup is a consumer responsibility
+Obsidian vaults should be included in borgbackup. Since obsidian is client-only on Darwin machines, backup of vault paths is a consumer (swancloud) responsibility. Agentplot exposes the vault paths via `extraClientOptions`; the consumer wires them into its backup strategy (e.g., borgbackup include paths). Agentplot does not generate any backup configuration itself.
 
 ## Risks / Trade-offs
 

@@ -36,13 +36,16 @@ The obsidian client role SHALL expose `vaults` (list of strings) and `vaultBaseP
 - **WHEN** an agentplot profile defines an obsidian client with `vaults = [ "Personal" "Creative" ]`
 - **THEN** the client's skill and CLI SHALL reference both vaults
 
-### Requirement: Obsidian client supports syncthing vault sync toggle
-The obsidian client role SHALL expose `syncthing.enable` (bool, default true) via `extraClientOptions`. When enabled, the perInstance SHALL generate HM module config declaring syncthing folder entries for each vault.
+### Requirement: Obsidian client exposes syncthing enable flag and vault paths for consumer-level wiring
+The obsidian client role SHALL expose `syncthing.enable` (bool, default true) and vault paths via `extraClientOptions` in the interface. Agentplot SHALL NOT generate syncthing folder declarations in the perInstance HM module. The consumer (swancloud) is responsible for reading the exposed vault paths and enable flag to wire its own syncthing folder entries, device IDs, keys, and sharing topology.
 
 #### Scenario: Syncthing enabled with two vaults
 - **WHEN** `syncthing.enable = true` and `vaults = [ "Business" "Personal" ]`
-- **THEN** the generated HM module SHALL declare syncthing folder entries for both vault paths
+- **THEN** the interface SHALL expose both vault paths and the syncthing enable flag for the consumer to wire syncthing folder declarations
 
 #### Scenario: Syncthing disabled
 - **WHEN** `syncthing.enable = false`
-- **THEN** no syncthing configuration SHALL be generated
+- **THEN** the interface SHALL expose the disabled flag; the consumer SHALL NOT wire syncthing folders for this client
+
+### Requirement: Obsidian client exposes vault paths for consumer backup integration
+The obsidian client role SHALL expose vault paths via `extraClientOptions` so that consumers can include them in their backup strategy (e.g., borgbackup include paths). Agentplot does not generate backup configuration; it only provides the paths.

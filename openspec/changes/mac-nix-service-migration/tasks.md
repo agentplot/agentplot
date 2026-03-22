@@ -15,7 +15,7 @@
 - [ ] 3.1 Create `services/obsidian/default.nix` with client-only role using mkClientTooling — obsidian-cli package, extraClientOptions for vaults (list of strings), vaultBasePath (string), syncthing.enable (bool)
 - [ ] 3.2 Create `services/obsidian/skills/SKILL.md` — obsidian agent skill covering vault operations, note search, creation, linking, and management via obsidian-cli
 - [ ] 3.3 Create `services/obsidian/skills/SKILL-para.md` — obsidian-para skill for PARA-based note organization with vault routing rules referencing client vault config
-- [ ] 3.4 Wire syncthing folder declarations in perInstance HM module when syncthing.enable is true
+- [ ] 3.4 Expose syncthing.enable and vault paths in interface (extraClientOptions) for consumer-level syncthing and backup wiring — no folder declarations in perInstance
 
 ## 4. Email Service — Client-Only
 
