@@ -8,7 +8,7 @@
   # ── Server Role ──────────────────────────────────────────────────────────────
 
   roles.server = {
-    description = "subcog memory server (Rust binary + PostgreSQL/pgvector + Caddy)";
+    description = "subcog memory server (Rust binary + Caddy, external PostgreSQL)";
 
     interface =
       { lib, ... }:
@@ -22,11 +22,6 @@
             type = lib.types.port;
             default = 8421;
             description = "HTTP port for the subcog server";
-          };
-          postgresHost = lib.mkOption {
-            type = lib.types.str;
-            default = "localhost";
-            description = "PostgreSQL host for subcog database";
           };
         };
       };
@@ -62,18 +57,6 @@
               '';
             };
 
-            services.postgresql = {
-              enable = true;
-              extensions = ps: [ ps.pgvector ];
-              ensureDatabases = [ "subcog" ];
-              ensureUsers = [
-                {
-                  name = "subcog";
-                  ensureDBOwnership = true;
-                }
-              ];
-            };
-
             systemd.services.subcog-env = {
               description = "Prepare subcog environment file";
               before = [ "subcog.service" ];
@@ -85,7 +68,7 @@
               script = ''
                 JWT_SECRET=$(cat ${jwtSecretPath})
                 printf '%s\n' \
-                  "SUBCOG_DATABASE_URL=postgresql://subcog@${settings.postgresHost}/subcog" \
+                  "SUBCOG_DATABASE_URL=postgresql://subcog@10.0.0.1/subcog" \
                   "SUBCOG_JWT_SECRET=$JWT_SECRET" \
                   "SUBCOG_PORT=${port}" \
                   "SUBCOG_HOST=127.0.0.1" \
@@ -97,10 +80,8 @@
               description = "subcog persistent memory server";
               after = [
                 "network.target"
-                "postgresql.service"
                 "subcog-env.service"
               ];
-              requires = [ "postgresql.service" ];
               wantedBy = [ "multi-user.target" ];
 
               serviceConfig = {
@@ -142,11 +123,7 @@
             networking.firewall.allowedTCPPorts = [ 443 ];
 
             services.borgbackup.jobs.subcog = {
-              paths = [ "/persist/subcog/backup" ];
-              preHook = ''
-                mkdir -p /persist/subcog/backup
-                ${config.services.postgresql.package}/bin/pg_dump subcog > /persist/subcog/backup/subcog.sql
-              '';
+              paths = [ "/persist/subcog" ];
             };
 
             systemd.tmpfiles.rules = [

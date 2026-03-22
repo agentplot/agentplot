@@ -28,11 +28,6 @@
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    qmd = {
-      url = "github:tobi/qmd";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =

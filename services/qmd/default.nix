@@ -59,14 +59,13 @@
       {
         nixosModule =
           {
-            self,
             config,
             pkgs,
             lib,
             ...
           }:
           let
-            qmdPackage = self.inputs.qmd.packages.${pkgs.system}.default;
+            qmdPackage = pkgs.llm-agents.qmd;
             tlsConfig = config.caddy-cloudflare.tls;
 
             # Generate qmd collection config as JSON

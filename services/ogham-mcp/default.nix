@@ -8,7 +8,7 @@
   # ── Server Role ──────────────────────────────────────────────────────────────
 
   roles.server = {
-    description = "ogham-mcp instance (systemd + PostgreSQL/pgvector + Caddy)";
+    description = "ogham-mcp instance (systemd + Caddy, external PostgreSQL)";
 
     interface =
       { lib, ... }:
@@ -37,11 +37,6 @@
             type = lib.types.str;
             default = "";
             description = "Ollama server URL (only used when embeddingProvider = ollama)";
-          };
-          postgresHost = lib.mkOption {
-            type = lib.types.str;
-            default = "localhost";
-            description = "PostgreSQL host address";
           };
         };
       };
@@ -102,29 +97,11 @@
               '';
             };
 
-            # ── PostgreSQL + pgvector ────────────────────────────────────────
-
-            services.postgresql = {
-              enable = true;
-              extensions = ps: [ ps.pgvector ];
-              ensureDatabases = [ "ogham" ];
-              ensureUsers = [
-                {
-                  name = "ogham";
-                  ensureDBOwnership = true;
-                }
-              ];
-            };
-
             # ── Systemd service ──────────────────────────────────────────────
 
             systemd.services.ogham-mcp = {
               description = "ogham-mcp persistent agent memory server";
-              after = [
-                "network.target"
-                "postgresql.service"
-              ];
-              requires = [ "postgresql.service" ];
+              after = [ "network.target" ];
               wantedBy = [ "multi-user.target" ];
 
               serviceConfig = {
@@ -140,7 +117,7 @@
               preStart = lib.mkBefore (
                 let
                   dbPassword = "$(cat ${dbPasswordPath})";
-                  dbUrl = "postgresql://ogham:${dbPassword}@${settings.postgresHost}/ogham";
+                  dbUrl = "postgresql://ogham:${dbPassword}@10.0.0.1/ogham";
                 in
                 ''
                   printf '%s\n' \
@@ -181,7 +158,6 @@
             # ── Borgbackup state ─────────────────────────────────────────────
 
             clan.core.state.ogham-mcp.folders = [
-              "/var/lib/postgresql"
               "/persist/ogham-mcp"
             ];
 

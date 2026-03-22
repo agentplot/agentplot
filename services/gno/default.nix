@@ -8,7 +8,7 @@
   # ── Server Role ──────────────────────────────────────────────────────────────
 
   roles.server = {
-    description = "gno instance (OCI container + Caddy reverse proxy)";
+    description = "gno instance (systemd + Caddy reverse proxy)";
 
     interface =
       { lib, ... }:
@@ -63,34 +63,31 @@
             port = settings.port;
             tlsConfig = config.caddy-cloudflare.tls;
 
-            # Generate a JSON config for gno from Nix collection options
-            gnoConfig = pkgs.writeText "gno-config.json" (builtins.toJSON {
-              port = port;
-              dataDir = "/data";
-              collections = lib.mapAttrs (name: col: {
-                path = "/collections/${name}";
-                pattern = col.pattern;
+            # Generate a JSON config for gno — paths reference host filesystem directly
+            gnoConfigFile = pkgs.writeText "gno-config.json" (builtins.toJSON {
+              inherit port;
+              dataDir = "/persist/gno";
+              collections = lib.mapAttrs (_name: col: {
+                inherit (col) path pattern;
               }) settings.collections;
             });
-
-            # Build volume mounts: persistent data + per-collection bind-mounts
-            collectionVolumes = lib.mapAttrsToList (
-              name: col: "${col.path}:/collections/${name}:ro"
-            ) settings.collections;
           in
           {
-            virtualisation.oci-containers = {
-              backend = "podman";
-              containers.gno = {
-                image = "ghcr.io/nicepkg/gno:latest";
-                ports = [ "${toString port}:${toString port}" ];
-                volumes = [
-                  "/persist/gno:/data"
-                  "${gnoConfig}:/app/gno-config.json:ro"
-                ] ++ collectionVolumes;
-                environment = {
-                  GNO_CONFIG = "/app/gno-config.json";
-                };
+            systemd.services.gno = {
+              description = "gno document search engine";
+              after = [ "network.target" ];
+              wantedBy = [ "multi-user.target" ];
+
+              environment.GNO_CONFIG = toString gnoConfigFile;
+
+              serviceConfig = {
+                ExecStart = "${pkgs.llm-agents.gno}/bin/gno";
+                Restart = "on-failure";
+                RestartSec = 10;
+                DynamicUser = true;
+                StateDirectory = "gno";
+                WorkingDirectory = "/persist/gno";
+                ReadWritePaths = [ "/persist/gno" ];
               };
             };
 
