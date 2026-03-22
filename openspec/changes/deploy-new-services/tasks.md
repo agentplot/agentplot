@@ -22,8 +22,8 @@
 
 ## 3. Prerequisite: subcog packaging
 
-- [ ] 3.1 Package subcog Rust binary in llm-agents.nix (buildRustPackage or crane) — **BLOCKED**: being handled in llm-agents.nix repo (github:afterthought/llm-agents.nix, branch: add-subcog)
-- [ ] 3.2 Verify `pkgs.llm-agents.subcog` is available via overlay after packaging — **BLOCKED**: depends on 3.1
+- [x] 3.1 Package subcog Rust binary in llm-agents.nix (buildRustPackage or crane) — done in github:afterthought/llm-agents.nix branch add-subcog
+- [x] 3.2 Verify `pkgs.llm-agents.subcog` is available via overlay after packaging — confirmed overlay exposes `pkgs.llm-agents.subcog`; updated ExecStart to match
 
 ## 4. Verification
 
