@@ -1,0 +1,260 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Miniflux API",
+    "version": "2.0",
+    "description": "Miniflux v2 RSS reader API"
+  },
+  "servers": [
+    {
+      "url": "{base_url}/v1",
+      "variables": {
+        "base_url": {
+          "default": "http://localhost:8070"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/feeds": {
+      "get": {
+        "operationId": "list-feeds",
+        "summary": "List all feeds",
+        "responses": { "200": { "description": "List of feeds" } }
+      },
+      "post": {
+        "operationId": "create-feed",
+        "summary": "Create a new feed",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["feed_url", "category_id"],
+                "properties": {
+                  "feed_url": { "type": "string" },
+                  "category_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Feed created" } }
+      }
+    },
+    "/feeds/{feedID}": {
+      "get": {
+        "operationId": "get-feed",
+        "summary": "Get a feed",
+        "parameters": [{ "name": "feedID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Feed details" } }
+      },
+      "put": {
+        "operationId": "update-feed",
+        "summary": "Update a feed",
+        "parameters": [{ "name": "feedID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "category_id": { "type": "integer" },
+                  "feed_url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Feed updated" } }
+      },
+      "delete": {
+        "operationId": "delete-feed",
+        "summary": "Delete a feed",
+        "parameters": [{ "name": "feedID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Feed deleted" } }
+      }
+    },
+    "/feeds/{feedID}/refresh": {
+      "put": {
+        "operationId": "refresh-feed",
+        "summary": "Refresh a feed",
+        "parameters": [{ "name": "feedID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Feed refreshed" } }
+      }
+    },
+    "/feeds/{feedID}/entries": {
+      "get": {
+        "operationId": "list-feed-entries",
+        "summary": "List feed entries",
+        "parameters": [
+          { "name": "feedID", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["read", "unread", "removed"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } },
+          { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["id", "status", "published_at", "category_title", "category_id"] } },
+          { "name": "direction", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": { "200": { "description": "List of entries" } }
+      }
+    },
+    "/entries": {
+      "get": {
+        "operationId": "list-entries",
+        "summary": "List all entries",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["read", "unread", "removed"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } },
+          { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["id", "status", "published_at", "category_title", "category_id"] } },
+          { "name": "direction", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } },
+          { "name": "starred", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "category_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "List of entries" } }
+      }
+    },
+    "/entries/{entryID}": {
+      "get": {
+        "operationId": "get-entry",
+        "summary": "Get an entry",
+        "parameters": [{ "name": "entryID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Entry details" } }
+      }
+    },
+    "/entries/{entryID}/bookmark": {
+      "put": {
+        "operationId": "toggle-entry-bookmark",
+        "summary": "Toggle entry bookmark/star",
+        "parameters": [{ "name": "entryID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Bookmark toggled" } }
+      }
+    },
+    "/entries/status": {
+      "put": {
+        "operationId": "update-entries-status",
+        "summary": "Update entries status (read/unread)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["entry_ids", "status"],
+                "properties": {
+                  "entry_ids": { "type": "array", "items": { "type": "integer" } },
+                  "status": { "type": "string", "enum": ["read", "unread"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "204": { "description": "Status updated" } }
+      }
+    },
+    "/categories": {
+      "get": {
+        "operationId": "list-categories",
+        "summary": "List all categories",
+        "responses": { "200": { "description": "List of categories" } }
+      },
+      "post": {
+        "operationId": "create-category",
+        "summary": "Create a category",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Category created" } }
+      }
+    },
+    "/categories/{categoryID}": {
+      "put": {
+        "operationId": "update-category",
+        "summary": "Update a category",
+        "parameters": [{ "name": "categoryID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Category updated" } }
+      },
+      "delete": {
+        "operationId": "delete-category",
+        "summary": "Delete a category",
+        "parameters": [{ "name": "categoryID", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Category deleted" } }
+      }
+    },
+    "/categories/{categoryID}/entries": {
+      "get": {
+        "operationId": "list-category-entries",
+        "summary": "List entries in a category",
+        "parameters": [
+          { "name": "categoryID", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["read", "unread", "removed"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "List of entries" } }
+      }
+    },
+    "/export": {
+      "get": {
+        "operationId": "export-opml",
+        "summary": "Export feeds as OPML",
+        "responses": { "200": { "description": "OPML document" } }
+      }
+    },
+    "/import": {
+      "post": {
+        "operationId": "import-opml",
+        "summary": "Import OPML feed subscriptions",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/xml": {
+              "schema": { "type": "string" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Import successful" } }
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "get-current-user",
+        "summary": "Get current user",
+        "responses": { "200": { "description": "Current user" } }
+      }
+    },
+    "/feeds/refresh": {
+      "put": {
+        "operationId": "refresh-all-feeds",
+        "summary": "Refresh all feeds",
+        "responses": { "204": { "description": "All feeds refreshed" } }
+      }
+    }
+  }
+}

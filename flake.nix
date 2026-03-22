@@ -31,7 +31,7 @@
   };
 
   outputs =
-    { self, nixpkgs, agent-skills-nix, agentplot-kit, ... }:
+    { self, nixpkgs, agent-skills-nix, agentplot-kit, nix-openclaw, ... }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -49,6 +49,18 @@
       clan.modules.qmd = import ./services/qmd { inherit mkClientTooling; };
       clan.modules.subcog = import ./services/subcog { inherit mkClientTooling; };
       clan.modules.ogham-mcp = import ./services/ogham-mcp { inherit mkClientTooling; };
+      clan.modules.miniflux = import ./services/miniflux { inherit mkClientTooling; };
+      clan.modules.obsidian = import ./services/obsidian { inherit mkClientTooling; };
+      clan.modules.email = import ./services/email { inherit mkClientTooling; };
+      clan.modules.tana = import ./services/tana { inherit mkClientTooling; };
+      clan.modules.openclaw = import ./services/openclaw {
+        inherit mkClientTooling;
+        openclaw-packages = nix-openclaw.packages or { };
+        lobster = nix-openclaw.packages.lobster or null;
+      };
+      clan.modules.paperless = import ./services/paperless {
+        inherit mkClientTooling;
+      };
 
       nixosModules.agentplot = {
         imports = [ ./modules/agentplot.nix ];
@@ -68,6 +80,7 @@
         in
         {
           linkding-cli = pkgs.callPackage ./services/linkding/packages/linkding-cli { };
+          miniflux-cli = pkgs.callPackage ./services/miniflux/packages/miniflux-cli { };
         }
       );
     };
