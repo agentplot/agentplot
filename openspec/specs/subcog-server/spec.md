@@ -13,7 +13,7 @@ The service SHALL define a `server` role that deploys the subcog binary as a sys
 - **THEN** it SHALL have a `roles.server` with a description indicating it runs the subcog memory server
 
 ### Requirement: Server interface options
-The server role interface SHALL expose configurable options: `domain` (string, required), `port` (integer, default 8421), and `postgresHost` (string, default "localhost").
+The server role interface SHALL expose configurable options: `domain` (string, required) and `port` (integer, default 8421).
 
 #### Scenario: Domain is required
 - **WHEN** a server instance is configured without `domain`
@@ -28,33 +28,22 @@ The server role interface SHALL expose configurable options: `domain` (string, r
 - **THEN** the subcog service SHALL listen on port 9000
 
 ### Requirement: Systemd service for subcog
-The server role SHALL create a systemd service named `subcog` that runs the subcog binary, passing database connection and JWT secret via environment variables.
+The server role SHALL create a systemd service named `subcog` that runs the subcog binary, passing database connection via environment variables loaded from an environment file. The database URL SHALL connect to PostgreSQL at `10.0.0.1` with a password from the shared `subcog-db-password` vars generator.
 
-#### Scenario: Service starts after PostgreSQL
+#### Scenario: Service starts after network
 - **WHEN** the NixOS system boots
-- **THEN** the `subcog` systemd service SHALL start after `postgresql.service` and be of type `simple`
+- **THEN** the `subcog` systemd service SHALL start after `network.target` and `subcog-env.service`, and be of type `simple`
 
-#### Scenario: Service environment includes JWT secret
+#### Scenario: Service environment includes database URL with password
 - **WHEN** the subcog service starts
-- **THEN** it SHALL have access to the JWT secret from clan.core.vars via environment or environment file
+- **THEN** it SHALL have `SUBCOG_DATABASE_URL` pointing to `postgresql://subcog:<password>@10.0.0.1/subcog` with the password read from the `subcog-db-password` vars generator
 
-### Requirement: PostgreSQL with pgvector
-The server role SHALL enable PostgreSQL with the pgvector extension and create a database named `subcog`.
+### Requirement: Database password generation
+The server role SHALL generate a database password using `clan.core.vars.generators` with `share = true` so the host can mirror it for the `ALTER USER` command.
 
-#### Scenario: Database and extension provisioned
+#### Scenario: Password generator exists
 - **WHEN** the server role is applied
-- **THEN** PostgreSQL SHALL be enabled with pgvector in `extraPlugins`, and `ensureDatabases` SHALL include `"subcog"`
-
-#### Scenario: Database user created
-- **WHEN** the server role is applied
-- **THEN** `ensureUsers` SHALL include a `"subcog"` user with `ensureDBOwnership = true`
-
-### Requirement: JWT secret generation
-The server role SHALL generate a JWT secret using `clan.core.vars.generators` with `share = true` so clients can access the same secret.
-
-#### Scenario: Secret is generated and shared
-- **WHEN** the server role is applied
-- **THEN** a vars generator named `subcog-jwt-secret` SHALL exist with `share = true`, generating a random hex secret
+- **THEN** a vars generator named `subcog-db-password` SHALL exist with `share = true`, producing a random 32-byte hex secret
 
 ### Requirement: Caddy reverse proxy with TLS
 The server role SHALL configure a Caddy virtual host for the configured domain, reverse-proxying to the subcog HTTP port with TLS via the caddy-cloudflare shared module.
@@ -63,12 +52,13 @@ The server role SHALL configure a Caddy virtual host for the configured domain, 
 - **WHEN** the server role is applied with `domain = "subcog.swancloud.net"`
 - **THEN** `services.caddy.virtualHosts."subcog.swancloud.net"` SHALL be configured with `reverse_proxy` to `http://localhost:${port}` and the caddy-cloudflare TLS block
 
-### Requirement: borgbackup for database
-The server role SHALL configure borgbackup to back up PostgreSQL dumps of the subcog database.
+### Requirement: borgbackup for service data
+The server role SHALL configure borgbackup to back up the subcog persist directory. PostgreSQL backup is handled on the host, not the guest.
 
-#### Scenario: Backup job configured
+#### Scenario: Backup paths configured
 - **WHEN** the server role is applied
-- **THEN** a borgbackup job or pre-backup hook SHALL run `pg_dump subcog` and include the dump in the backup
+- **THEN** borgbackup paths SHALL include `/persist/subcog`
+- **THEN** PostgreSQL dump SHALL NOT be performed by the guest (handled on host)
 
 ### Requirement: Flake output registration
 The subcog service SHALL be registered in `flake.nix` as `clan.modules.subcog`.

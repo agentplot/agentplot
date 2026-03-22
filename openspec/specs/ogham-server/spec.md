@@ -6,37 +6,26 @@ The ogham-mcp service SHALL be a valid clanService with `_class = "clan.service"
 - **THEN** it SHALL have `_class = "clan.service"`, `manifest.name = "ogham-mcp"`, and `manifest.categories = ["Application"]`
 
 ### Requirement: Server role interface options
-The server role SHALL expose interface options for: `domain` (string, FQDN), `port` (integer, default 8420), `embeddingProvider` (enum: openai/ollama/mistral/voyage, default openai), `ollamaHost` (string, default empty), and `postgresHost` (string, default "localhost").
+The server role SHALL expose interface options for: `domain` (string, FQDN), `port` (integer, default 8420), `embeddingProvider` (enum: openai/ollama/mistral/voyage, default openai), and `ollamaHost` (string, default empty).
 
 #### Scenario: Default option values
 - **WHEN** a server role instance is created with only `domain` specified
-- **THEN** `port` SHALL be 8420, `embeddingProvider` SHALL be "openai", `ollamaHost` SHALL be "", and `postgresHost` SHALL be "localhost"
+- **THEN** `port` SHALL be 8420, `embeddingProvider` SHALL be "openai", and `ollamaHost` SHALL be ""
 
 #### Scenario: Custom embedding provider
 - **WHEN** `embeddingProvider` is set to "ollama" and `ollamaHost` is set to "http://gpu-host:11434"
 - **THEN** the ogham-mcp process SHALL be configured to use the ollama embedding backend at that host
 
-### Requirement: PostgreSQL database provisioning
-The server role SHALL enable `services.postgresql` with the pgvector extension and create a database named `ogham` with user `ogham`. The database password SHALL be managed via `clan.core.vars.generators`.
-
-#### Scenario: PostgreSQL is provisioned
-- **WHEN** the server role NixOS module is activated
-- **THEN** PostgreSQL SHALL be running with pgvector extension loaded, database `ogham` SHALL exist, and user `ogham` SHALL have access
-
-#### Scenario: Database password is generated
-- **WHEN** the vars generator `ogham-db-password` runs
-- **THEN** it SHALL produce a random 32-byte hex secret stored at `files.password.path` with `secret = true`
-
 ### Requirement: Systemd service for ogham-mcp
-The server role SHALL create a systemd service `ogham-mcp` that runs `uvx ogham-mcp` in SSE mode on the configured port. The service SHALL depend on `postgresql.service` and pass database connection and embedding provider configuration via environment variables.
+The server role SHALL create a systemd service `ogham-mcp` that runs `uvx ogham-mcp` in SSE mode on the configured port. The service SHALL depend on `network.target` and pass database connection and embedding provider configuration via environment variables. The database URL SHALL connect to PostgreSQL at `10.0.0.1` using a password from the shared vars generator.
 
 #### Scenario: Service starts successfully
-- **WHEN** the system boots and PostgreSQL is ready
+- **WHEN** the system boots and the network is ready
 - **THEN** the `ogham-mcp` systemd service SHALL start and listen for SSE connections on the configured port
 
 #### Scenario: Service environment variables
 - **WHEN** the ogham-mcp process starts
-- **THEN** it SHALL receive environment variables for: database URL (constructed from postgresHost, password, database name), embedding provider, embedding API key (if applicable), and SSE port
+- **THEN** it SHALL receive environment variables for: database URL (connecting to `10.0.0.1` with password from `ogham-db-password` vars generator), embedding provider, embedding API key (if applicable), and SSE port
 
 #### Scenario: Service restarts on failure
 - **WHEN** the ogham-mcp process exits unexpectedly
@@ -68,11 +57,12 @@ The server role SHALL manage the embedding provider API key via `clan.core.vars.
 - **THEN** no embedding API key vars generator SHALL be created
 
 ### Requirement: Borgbackup state
-The server role SHALL register PostgreSQL data and persist directories with `clan.core.state` for borgbackup integration.
+The server role SHALL register the ogham-mcp persist directory with `clan.core.state` for borgbackup integration. PostgreSQL backup is handled on the host, not the guest.
 
 #### Scenario: Backup folders registered
 - **WHEN** the server role is activated
-- **THEN** `clan.core.state.ogham-mcp.folders` SHALL include the PostgreSQL data directory path
+- **THEN** `clan.core.state.ogham-mcp.folders` SHALL include `/persist/ogham-mcp`
+- **THEN** PostgreSQL data SHALL NOT be included (backed up on host)
 
 ### Requirement: Persistent data directories
 The server role SHALL create tmpfiles rules for persistent data directories used by the service.
