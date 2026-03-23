@@ -32,6 +32,7 @@ Each service in `services/` defines one or more roles (e.g., server/client, host
 
 - **No local PostgreSQL**: Server roles never define `services.postgresql`. Database provisioning happens on the host via `clan.core.postgresql` in the consuming inventory (e.g., swancloud).
 - **DB host hardcoded**: Services connect to `10.0.0.1:5432` (bridge gateway) matching the linkding/paperless pattern.
+- **DB passwords via env file**: Services needing PG use a `clan.core.vars.generators` shared password + oneshot env service (see ogham-mcp, subcog for pattern). Never put secrets in static `environment` blocks.
 - **Caddy TLS**: All server roles reference `config.caddy-cloudflare.tls` from the agentplot-kit module (not a local copy).
 - **Packages from overlays**: qmd and gno use `pkgs.llm-agents.qmd`/`pkgs.llm-agents.gno` via overlay, not flake inputs.
 
