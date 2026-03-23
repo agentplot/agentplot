@@ -1,7 +1,5 @@
-## ADDED Requirements
-
 ### Requirement: mkClientTooling generates complete client role from capabilities
-The `agentplot-kit.lib.mkClientTooling` function SHALL accept a capabilities attrset and return `{ interface; perInstance; }` that can be directly assigned to a clanService's `roles.client`.
+The `agentplot-kit.lib.mkClientTooling` function SHALL accept a capabilities attrset and return `{ interface; perInstance; }` that can be directly assigned to a clanService's `roles.client`. This SHALL work for client-only services (no server role in the same clanService).
 
 #### Scenario: MCP-only service (no skill, no CLI)
 - **WHEN** a service calls `mkClientTooling` with `capabilities.mcp` set and `capabilities.skills = null (or [])` and `capabilities.cli = null`
@@ -18,6 +16,21 @@ The `agentplot-kit.lib.mkClientTooling` function SHALL accept a capabilities att
 #### Scenario: No capabilities
 - **WHEN** a service calls `mkClientTooling` with all capabilities set to null
 - **THEN** the generated interface SHALL contain only `extraClientOptions` and the `name` option
+
+#### Scenario: Client-only service (no server role)
+- **WHEN** a clanService defines only `roles.client` using mkClientTooling with no `roles.server`
+- **THEN** the generated interface and perInstance SHALL function identically to when a server role exists — no server role dependency
+
+### Requirement: mkClientTooling supports extra HM packages
+The `capabilities` attrset SHALL accept an optional `extraPackages` field (list of packages) that are installed as global Home Manager packages (`home.packages`) rather than as scoped CLI wrappers.
+
+#### Scenario: Service with extra packages
+- **WHEN** a service calls `mkClientTooling` with `capabilities.extraPackages = [ lobster clawhub ]`
+- **THEN** the generated perInstance SHALL add those packages to `home.packages` in the HM module for each enabled client
+
+#### Scenario: Extra packages coexist with CLI wrapper
+- **WHEN** a service declares both `capabilities.cli` and `capabilities.extraPackages`
+- **THEN** the CLI wrapper SHALL be generated as usual AND the extra packages SHALL be added to `home.packages` independently
 
 ### Requirement: Generated interface uses multi-client pattern
 The generated `interface` SHALL always use `options.clients = attrsOf clientSubmodule` where each client submodule contains the `name` option, all target enable flags for available capabilities, and any `extraClientOptions`.
