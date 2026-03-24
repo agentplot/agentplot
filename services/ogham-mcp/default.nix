@@ -183,11 +183,6 @@
             type = "sse";
             urlTemplate = client: "${client.url}/sse";
           };
-          secret = {
-            name = "api-key";
-            mode = "prompted";
-            description = client: "API key for ogham-mcp client '${client.name}'";
-          };
         };
         extraClientOptions = { lib, ... }: {
           url = lib.mkOption {
