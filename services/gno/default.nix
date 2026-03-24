@@ -109,9 +109,7 @@
               "d /persist/caddy 0700 caddy caddy"
             ];
 
-            services.borgbackup.jobs = lib.mkIf (config ? services.borgbackup) {
-              default.paths = [ "/persist/gno" ];
-            };
+            clan.core.state.gno.folders = [ "/persist/gno" ];
           };
       };
   };

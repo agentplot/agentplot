@@ -115,7 +115,7 @@
               "d /persist/caddy 0700 caddy caddy"
             ];
 
-            services.borgbackup.jobs.system.paths = [ "/persist/qmd" ];
+            clan.core.state.qmd.folders = [ "/persist/qmd" ];
           };
       };
   };

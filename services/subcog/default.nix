@@ -121,9 +121,7 @@
 
             networking.firewall.allowedTCPPorts = [ 443 ];
 
-            services.borgbackup.jobs.subcog = {
-              paths = [ "/persist/subcog" ];
-            };
+            clan.core.state.subcog.folders = [ "/persist/subcog" ];
 
             systemd.tmpfiles.rules = [
               "d /persist/subcog 0755 subcog subcog"
