@@ -37,11 +37,6 @@
             default = "~/Documents/Obsidian";
             description = "Base directory containing Obsidian vaults";
           };
-          syncthing.enable = lib.mkOption {
-            type = lib.types.bool;
-            default = true;
-            description = "Whether to enable syncthing for vault synchronization (consumer wires actual folders)";
-          };
         };
       };
     in
