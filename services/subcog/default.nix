@@ -88,7 +88,7 @@
                 User = "subcog";
                 Group = "subcog";
                 EnvironmentFile = "/run/subcog.env";
-                ExecStart = "${pkgs.llm-agents.subcog}/bin/subcog";
+                ExecStart = "${pkgs.llm-agents.subcog}/bin/subcog serve";
                 Restart = "on-failure";
                 RestartSec = 5;
 

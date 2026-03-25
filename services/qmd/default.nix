@@ -86,7 +86,7 @@
               wantedBy = [ "multi-user.target" ];
 
               serviceConfig = {
-                ExecStart = "${qmdPackage}/bin/qmd --transport http --port ${toString settings.port} --collections ${collectionsConfigFile}";
+                ExecStart = "${qmdPackage}/bin/qmd mcp --http --port ${toString settings.port}";
                 Restart = "on-failure";
                 RestartSec = 10;
                 DynamicUser = true;
