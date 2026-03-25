@@ -81,7 +81,7 @@
               environment.GNO_CONFIG = toString gnoConfigFile;
 
               serviceConfig = {
-                ExecStartPre = "+${pkgs.llm-agents.gno}/bin/gno init --yes /persist/gno";
+                ExecStartPre = "+${pkgs.bash}/bin/bash -c 'test -f /persist/gno/.gno/config.json || ${pkgs.llm-agents.gno}/bin/gno init --yes /persist/gno'";
                 ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
