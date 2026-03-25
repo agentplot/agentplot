@@ -94,24 +94,33 @@
             };
 
             # Inject database password and optional OIDC secret into the service environment.
-            # Uses RuntimeDirectory so the DynamicUser can write env files.
+            # A separate oneshot runs as root (reads sops secrets) and writes env files
+            # to RuntimeDirectory before miniflux starts as DynamicUser.
+            systemd.services.miniflux-env = {
+              description = "Prepare Miniflux environment files";
+              before = [ "miniflux.service" ];
+              requiredBy = [ "miniflux.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+                RuntimeDirectory = "miniflux";
+                RuntimeDirectoryPreserve = "yes";
+              };
+              script = ''
+                DB_PASSWORD=$(cat ${dbPasswordPath})
+                printf 'DATABASE_URL=user=miniflux password=%s host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable\n' "$DB_PASSWORD" > /run/miniflux/db.env
+              '' + lib.optionalString oidcEnabled ''
+                SECRET=$(cat ${config.clan.core.vars.generators."oidc-miniflux".files."client-secret".path})
+                printf 'OAUTH2_CLIENT_SECRET=%s\n' "$SECRET" > /run/miniflux/oidc.env
+              '' + ''
+                chmod 644 /run/miniflux/*.env
+              '';
+            };
+
             systemd.services.miniflux = {
-              serviceConfig.RuntimeDirectory = "miniflux";
-              # Dash prefix makes EnvironmentFile optional — systemd won't fail if
-              # the files don't exist yet (preStart creates them).
+              # Dash prefix makes EnvironmentFile optional during initial systemd load.
               serviceConfig.EnvironmentFile = lib.mkForce (
                 [ "-/run/miniflux/db.env" ]
                 ++ lib.optionals oidcEnabled [ "-/run/miniflux/oidc.env" ]
-              );
-              preStart = lib.mkBefore (
-                ''
-                  DB_PASSWORD=$(cat ${dbPasswordPath})
-                  printf 'DATABASE_URL=user=miniflux password=%s host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable\n' "$DB_PASSWORD" > /run/miniflux/db.env
-                ''
-                + lib.optionalString oidcEnabled ''
-                  SECRET=$(cat ${config.clan.core.vars.generators."oidc-miniflux".files."client-secret".path})
-                  printf 'OAUTH2_CLIENT_SECRET=%s\n' "$SECRET" > /run/miniflux/oidc.env
-                ''
               );
             };
 
