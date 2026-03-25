@@ -88,9 +88,7 @@
                 User = "subcog";
                 Group = "subcog";
                 EnvironmentFile = "/run/subcog.env";
-                # TODO: subcog binary needs rebuild with --features http in llm-agents.nix
-                # Using stdio transport for now (works but not HTTP-accessible via Caddy)
-                ExecStart = "${pkgs.llm-agents.subcog}/bin/subcog serve";
+                ExecStart = "${pkgs.llm-agents.subcog}/bin/subcog serve --transport http --port ${port}";
                 Restart = "on-failure";
                 RestartSec = 5;
 
