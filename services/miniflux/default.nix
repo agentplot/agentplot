@@ -87,7 +87,7 @@
                 OAUTH2_PROVIDER = "oidc";
                 OAUTH2_REDIRECT_URL = "https://${settings.domain}/oauth2/oidc/callback";
                 OAUTH2_USER_CREATION = 1;
-                OAUTH2_OIDC_DISCOVERY_ENDPOINT = "https://${oidcCfg.issuerUrl}/oauth2/openid/${oidcCfg.clientId}/.well-known/openid-configuration";
+                OAUTH2_OIDC_DISCOVERY_ENDPOINT = "https://${oidcCfg.issuerUrl}/oauth2/openid/${oidcCfg.clientId}";
                 OAUTH2_CLIENT_ID = oidcCfg.clientId;
               };
               adminCredentialsFile = "/run/miniflux-admin.env";
