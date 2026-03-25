@@ -147,6 +147,8 @@
                 EnvironmentFile = [ "-/run/ogham-mcp.env" ];
                 DynamicUser = true;
                 StateDirectory = "ogham-mcp";
+                CacheDirectory = "ogham-mcp";
+                Environment = [ "UV_CACHE_DIR=/var/cache/ogham-mcp" ];
               };
             };
 
