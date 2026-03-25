@@ -97,11 +97,46 @@
               '';
             };
 
+            # ── Env file preparation (runs as root, before DynamicUser service) ─
+
+            systemd.services.ogham-mcp-env = {
+              description = "Prepare ogham-mcp environment file";
+              before = [ "ogham-mcp.service" ];
+              requiredBy = [ "ogham-mcp.service" ];
+              serviceConfig.Type = "oneshot";
+              serviceConfig.RemainAfterExit = true;
+              script =
+                let
+                  staticVars = lib.concatStringsSep "\n" (
+                    [
+                      "OGHAM_PORT=${toString settings.port}"
+                      "OGHAM_TRANSPORT=sse"
+                      "OGHAM_EMBEDDING_PROVIDER=${settings.embeddingProvider}"
+                    ]
+                    ++ lib.optional (settings.ollamaHost != "") "OGHAM_OLLAMA_HOST=${settings.ollamaHost}"
+                  );
+                in
+                ''
+                  DB_PASSWORD=$(cat ${dbPasswordPath})
+                  {
+                    printf 'DATABASE_URL=postgresql://ogham:%s@10.0.0.1/ogham\n' "$DB_PASSWORD"
+                    printf '%s\n' ${lib.escapeShellArg staticVars}
+                '' + lib.optionalString needsApiKey ''
+                    printf 'OGHAM_API_KEY=%s\n' "$(cat ${apiKeyPath})"
+                '' + ''
+                  } > /run/ogham-mcp.env
+                '';
+            };
+
             # ── Systemd service ──────────────────────────────────────────────
 
             systemd.services.ogham-mcp = {
               description = "ogham-mcp persistent agent memory server";
-              after = [ "network.target" ];
+              after = [
+                "network.target"
+                "ogham-mcp-env.service"
+              ];
+              requires = [ "ogham-mcp-env.service" ];
               wantedBy = [ "multi-user.target" ];
 
               serviceConfig = {
@@ -109,33 +144,10 @@
                 ExecStart = "${pkgs.uv}/bin/uvx ogham-mcp";
                 Restart = "on-failure";
                 RestartSec = 5;
-                EnvironmentFile = "/run/ogham-mcp.env";
+                EnvironmentFile = [ "-/run/ogham-mcp.env" ];
                 DynamicUser = true;
                 StateDirectory = "ogham-mcp";
               };
-
-              preStart = lib.mkBefore (
-                let
-                  dbPassword = "$(cat ${dbPasswordPath})";
-                  dbUrl = "postgresql://ogham:${dbPassword}@10.0.0.1/ogham";
-                in
-                ''
-                  printf '%s\n' \
-                    "DATABASE_URL=${dbUrl}" \
-                    "OGHAM_PORT=${toString settings.port}" \
-                    "OGHAM_TRANSPORT=sse" \
-                    "OGHAM_EMBEDDING_PROVIDER=${settings.embeddingProvider}" \
-                ''
-                + lib.optionalString (settings.ollamaHost != "") ''
-                    "OGHAM_OLLAMA_HOST=${settings.ollamaHost}" \
-                ''
-                + lib.optionalString needsApiKey ''
-                    "OGHAM_API_KEY=$(cat ${apiKeyPath})" \
-                ''
-                + ''
-                    > /run/ogham-mcp.env
-                ''
-              );
             };
 
             # ── Caddy reverse proxy ──────────────────────────────────────────
