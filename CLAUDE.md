@@ -63,6 +63,27 @@ Services define Home Manager modules that accumulate into `agentplot.hmModules.<
 - `nixosModules.agentplot` / `darwinModules.agentplot` — HM delegation adapter
 - `packages.<system>.linkding-cli` — CLI package
 
+### mkClientTooling Patterns
+- Skill keys MUST include serviceName: `${serviceName}-${clientNameId}` — bare clientNameId collides across services
+- `writeShellApplication` runs shellcheck — use `VAR="$(cmd)"; export VAR` not `export VAR="$(cmd)"`
+- `lib.isPath` returns false for derivations — check `builtins.isAttrs content && content ? outPath` for derivation paths
+- `programs.claude-code.skills` values can be strings, paths, OR derivations (from mkSkillDir)
+
+### Miniflux Service
+- NixOS miniflux module types `CREATE_ADMIN`, `RUN_MIGRATIONS`, `OAUTH2_USER_CREATION` as integers, not strings
+- `OAUTH2_OIDC_DISCOVERY_ENDPOINT` wants the issuer URL, NOT the full `/.well-known/openid-configuration` path
+- `adminCredentialsFile` must contain `ADMIN_USERNAME=x` and `ADMIN_PASSWORD=x` lines
+- DynamicUser can't read sops secrets (root:root 0440) — use a separate root oneshot to prepare env files
+- EnvironmentFile paths validated BEFORE ExecStartPre — use `-` prefix for optional files
+
+### Service State
+- Use `clan.core.state.<name>.folders` for persistent state paths, not `services.borgbackup.jobs`
+- `config ? services.borgbackup` is always true (NixOS declares the option) — not a valid guard
+
+### Microvm Guest Conventions
+- All guests need `networking.hostId = lib.mkForce "<unique-8-hex>"` to resolve microvm vs clan-core ZFS conflict
+- Guests using llm-agents packages need `nixpkgs.overlays = [ inputs.llm-agents.overlays.default ]`
+
 ## Related Repos
 
 - `agentplot-kit` (`../agentplot-kit`) — Framework: mkClientTooling, caddy-cloudflare, secretspec, claude-code HM modules
