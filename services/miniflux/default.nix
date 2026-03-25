@@ -90,37 +90,34 @@
                 OAUTH2_OIDC_DISCOVERY_ENDPOINT = "https://${oidcCfg.issuerUrl}/oauth2/openid/${oidcCfg.clientId}/.well-known/openid-configuration";
                 OAUTH2_CLIENT_ID = oidcCfg.clientId;
               };
-              adminCredentialsFile = dbPasswordPath;
+              adminCredentialsFile = "/run/miniflux-admin.env";
             };
 
             # Inject database password and optional OIDC secret into the service environment.
             # A separate oneshot runs as root (reads sops secrets) and writes env files
-            # to RuntimeDirectory before miniflux starts as DynamicUser.
+            # to /run/ before miniflux starts as DynamicUser.
             systemd.services.miniflux-env = {
               description = "Prepare Miniflux environment files";
               before = [ "miniflux.service" ];
               requiredBy = [ "miniflux.service" ];
-              serviceConfig = {
-                Type = "oneshot";
-                RuntimeDirectory = "miniflux";
-                RuntimeDirectoryPreserve = "yes";
-              };
+              serviceConfig.Type = "oneshot";
+              serviceConfig.RemainAfterExit = true;
               script = ''
                 DB_PASSWORD=$(cat ${dbPasswordPath})
-                printf 'DATABASE_URL=user=miniflux password=%s host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable\n' "$DB_PASSWORD" > /run/miniflux/db.env
+                printf 'DATABASE_URL=user=miniflux password=%s host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable\n' "$DB_PASSWORD" > /run/miniflux-db.env
+                printf 'ADMIN_USERNAME=admin\nADMIN_PASSWORD=%s\n' "$DB_PASSWORD" > /run/miniflux-admin.env
               '' + lib.optionalString oidcEnabled ''
                 SECRET=$(cat ${config.clan.core.vars.generators."oidc-miniflux".files."client-secret".path})
-                printf 'OAUTH2_CLIENT_SECRET=%s\n' "$SECRET" > /run/miniflux/oidc.env
-              '' + ''
-                chmod 644 /run/miniflux/*.env
+                printf 'OAUTH2_CLIENT_SECRET=%s\n' "$SECRET" > /run/miniflux-oidc.env
               '';
             };
 
             systemd.services.miniflux = {
-              # Dash prefix makes EnvironmentFile optional during initial systemd load.
+              after = [ "miniflux-env.service" ];
+              requires = [ "miniflux-env.service" ];
               serviceConfig.EnvironmentFile = lib.mkForce (
-                [ "-/run/miniflux/db.env" ]
-                ++ lib.optionals oidcEnabled [ "-/run/miniflux/oidc.env" ]
+                [ "-/run/miniflux-db.env" ]
+                ++ lib.optionals oidcEnabled [ "-/run/miniflux-oidc.env" ]
               );
             };
 
