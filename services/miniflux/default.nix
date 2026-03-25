@@ -116,7 +116,7 @@
               after = [ "miniflux-env.service" ];
               requires = [ "miniflux-env.service" ];
               serviceConfig.EnvironmentFile = lib.mkForce (
-                [ "-/run/miniflux-db.env" ]
+                [ "-/run/miniflux-db.env" "-/run/miniflux-admin.env" ]
                 ++ lib.optionals oidcEnabled [ "-/run/miniflux-oidc.env" ]
               );
             };
