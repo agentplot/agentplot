@@ -97,9 +97,11 @@
             # Uses RuntimeDirectory so the DynamicUser can write env files.
             systemd.services.miniflux = {
               serviceConfig.RuntimeDirectory = "miniflux";
+              # Dash prefix makes EnvironmentFile optional — systemd won't fail if
+              # the files don't exist yet (preStart creates them).
               serviceConfig.EnvironmentFile = lib.mkForce (
-                [ "/run/miniflux/db.env" ]
-                ++ lib.optionals oidcEnabled [ "/run/miniflux/oidc.env" ]
+                [ "-/run/miniflux/db.env" ]
+                ++ lib.optionals oidcEnabled [ "-/run/miniflux/oidc.env" ]
               );
               preStart = lib.mkBefore (
                 ''
