@@ -80,13 +80,13 @@
               config = {
                 PORT = "8070";
                 DATABASE_URL = "user=miniflux host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable";
-                RUN_MIGRATIONS = "1";
-                CREATE_ADMIN = "1";
+                RUN_MIGRATIONS = 1;
+                CREATE_ADMIN = 1;
                 ADMIN_USERNAME = "admin";
               } // lib.optionalAttrs oidcEnabled {
                 OAUTH2_PROVIDER = "oidc";
                 OAUTH2_REDIRECT_URL = "https://${settings.domain}/oauth2/oidc/callback";
-                OAUTH2_USER_CREATION = "1";
+                OAUTH2_USER_CREATION = 1;
                 OAUTH2_OIDC_DISCOVERY_ENDPOINT = "https://${oidcCfg.issuerUrl}/oauth2/openid/${oidcCfg.clientId}/.well-known/openid-configuration";
                 OAUTH2_CLIENT_ID = oidcCfg.clientId;
               };
