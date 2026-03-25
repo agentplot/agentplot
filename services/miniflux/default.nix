@@ -93,20 +93,22 @@
               adminCredentialsFile = dbPasswordPath;
             };
 
-            # Inject database password and optional OIDC secret into the service environment
+            # Inject database password and optional OIDC secret into the service environment.
+            # Uses RuntimeDirectory so the DynamicUser can write env files.
             systemd.services.miniflux = {
+              serviceConfig.RuntimeDirectory = "miniflux";
               serviceConfig.EnvironmentFile = lib.mkForce (
-                [ "/run/miniflux-db.env" ]
-                ++ lib.optionals oidcEnabled [ "/run/miniflux-oidc.env" ]
+                [ "/run/miniflux/db.env" ]
+                ++ lib.optionals oidcEnabled [ "/run/miniflux/oidc.env" ]
               );
               preStart = lib.mkBefore (
                 ''
                   DB_PASSWORD=$(cat ${dbPasswordPath})
-                  printf 'DATABASE_URL=user=miniflux password=%s host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable\n' "$DB_PASSWORD" > /run/miniflux-db.env
+                  printf 'DATABASE_URL=user=miniflux password=%s host=10.0.0.1 port=5432 dbname=miniflux sslmode=disable\n' "$DB_PASSWORD" > /run/miniflux/db.env
                 ''
                 + lib.optionalString oidcEnabled ''
                   SECRET=$(cat ${config.clan.core.vars.generators."oidc-miniflux".files."client-secret".path})
-                  printf 'OAUTH2_CLIENT_SECRET=%s\n' "$SECRET" > /run/miniflux-oidc.env
+                  printf 'OAUTH2_CLIENT_SECRET=%s\n' "$SECRET" > /run/miniflux/oidc.env
                 ''
               );
             };
