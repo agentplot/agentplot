@@ -74,6 +74,13 @@
       };
       darwinModules.oidc = import ./modules/oidc.nix;
 
+      lib = {
+        mkFleetDashboard = { pkgs, inventorySerialization }:
+          import ./packages/fleet-dashboard { inherit pkgs inventorySerialization; };
+        mkFleetInventory = { pkgs, inventorySerialization }:
+          import ./packages/fleet-dashboard/inventory.nix { inherit pkgs inventorySerialization; };
+      };
+
       packages = forAllSystems (
         system:
         let

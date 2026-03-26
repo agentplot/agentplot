@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 1.5rem;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .header h1 { font-size: 1.5rem; font-weight: 600; }
+  .header .domain { color: var(--text-muted); font-size: 0.9rem; }
+  .description { color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem; }
+  .summary {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .summary .stat { color: var(--text-muted); }
+  .summary .stat strong { color: var(--text); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    font-size: 0.85rem;
+    transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  /* Tag filters */
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+  /* Machine grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .card-name { font-weight: 600; font-size: 0.95rem; }
+  .card-tags { display: flex; gap: 0.25rem; }
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    background: var(--border);
+    color: var(--text-muted);
+  }
+  .tag.darwin { background: #1a3a2a; color: var(--green); }
+  .tag.nixos { background: #1a2a3a; color: var(--accent); }
+  .tag.microvm { background: #2a1a3a; color: var(--purple); }
+
+  /* Service lists */
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    margin-top: 0.75rem;
+  }
+  .section-label:first-of-type { margin-top: 0; }
+  .service-list { list-style: none; }
+  .service-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    font-size: 0.85rem;
+  }
+  .service-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .service-dot.active { background: var(--green); }
+  .service-dot.inactive { background: var(--border); }
+  .service-name { flex: 1; }
+  .service-role {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Service view */
+  .service-card { margin-bottom: 0; }
+  .role-section { margin-top: 0.5rem; }
+  .role-name {
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+  .role-machines {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .machine-chip {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--border);
+    color: var(--text);
+  }
+  .module-info {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  /* Settings */
+  .settings-toggle {
+    font-size: 0.75rem;
+    color: var(--accent);
+    cursor: pointer;
+    margin-top: 0.3rem;
+    display: inline-block;
+  }
+  .settings-toggle:hover { text-decoration: underline; }
+  .settings-panel {
+    display: none;
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    background: var(--bg);
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-family: 'SF Mono', Menlo, monospace;
+    overflow-x: auto;
+  }
+  .settings-panel.open { display: block; }
+  .settings-key { color: var(--accent); }
+  .settings-value { color: var(--text); }
+  .settings-line { padding: 0.1rem 0; }
+
+  /* View toggle */
+  .view-container { display: none; }
+  .view-container.active { display: block; }
+
+  .deploy-info {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="fleet-name"></h1>
+  <span class="domain" id="fleet-domain"></span>
+</div>
+<div class="description" id="fleet-description"></div>
+<div class="summary" id="fleet-summary"></div>
+
+<div class="tabs">
+  <div class="tab active" data-view="machines">Machines</div>
+  <div class="tab" data-view="services">Services</div>
+</div>
+
+<div class="filters" id="filters"></div>
+
+<div class="view-container active" id="machines-view">
+  <div class="grid" id="machines-grid"></div>
+</div>
+
+<div class="view-container" id="services-view">
+  <div class="grid" id="services-grid"></div>
+</div>
+
+<script>
+const INVENTORY = __INVENTORY_JSON__;
+
+// Flatten Nix module settings, stripping _file and imports wrappers
+function flattenSettings(obj) {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(flattenSettings);
+
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === '_file') continue;
+    if (key === 'imports' && Array.isArray(value)) {
+      for (const imp of value) {
+        const flattened = flattenSettings(imp);
+        if (flattened && typeof flattened === 'object' && !Array.isArray(flattened)) {
+          Object.assign(result, flattened);
+        }
+      }
+      continue;
+    }
+    result[key] = flattenSettings(value);
+  }
+  return Object.keys(result).length > 0 ? result : null;
+}
+
+// Build machine → service map
+function buildMachineServiceMap(instances) {
+  const map = {};
+  for (const [instanceName, instance] of Object.entries(instances)) {
+    for (const [roleName, roleData] of Object.entries(instance.roles || {})) {
+      const machines = roleData.machines || {};
+      for (const [machineName, machineData] of Object.entries(machines)) {
+        if (!map[machineName]) map[machineName] = [];
+        map[machineName].push({
+          instance: instanceName,
+          module: instance.module,
+          role: roleName,
+          settings: flattenSettings(machineData.settings)
+        });
+      }
+      // Also handle tag-based assignments
+      for (const [tagName, tagData] of Object.entries(roleData.tags || {})) {
+        const tagMachines = INVENTORY.tags[tagName] || [];
+        for (const machineName of tagMachines) {
+          if (!map[machineName]) map[machineName] = [];
+          // Avoid duplicate if already added via direct machine assignment
+          if (!map[machineName].some(s => s.instance === instanceName && s.role === roleName)) {
+            map[machineName].push({
+              instance: instanceName,
+              module: instance.module,
+              role: roleName,
+              settings: flattenSettings(tagData.settings)
+            });
+          }
+        }
+      }
+    }
+  }
+  return map;
+}
+
+const machineServiceMap = buildMachineServiceMap(INVENTORY.instances);
+const allInstanceNames = Object.keys(INVENTORY.instances).sort();
+const allMachineNames = Object.keys(INVENTORY.machines).sort();
+
+// Render header
+document.getElementById('fleet-name').textContent = INVENTORY.meta.name;
+document.getElementById('fleet-domain').textContent = INVENTORY.meta.domain || '';
+document.getElementById('fleet-description').textContent = INVENTORY.meta.description || '';
+document.getElementById('fleet-summary').innerHTML = `
+  <span class="stat"><strong>${allMachineNames.length}</strong> machines</span>
+  <span class="stat"><strong>${allInstanceNames.length}</strong> services</span>
+  <span class="stat"><strong>${Object.keys(INVENTORY.tags).length}</strong> tags</span>
+`;
+
+// Build complete tag→machines map (merges inventory tags + per-machine tags)
+const allTags = { ...INVENTORY.tags };
+for (const [name, machine] of Object.entries(INVENTORY.machines)) {
+  for (const tag of (machine.tags || [])) {
+    if (!allTags[tag]) allTags[tag] = [];
+    if (!allTags[tag].includes(name)) allTags[tag].push(name);
+  }
+}
+
+// Render tag filters
+const filtersEl = document.getElementById('filters');
+const tagNames = Object.keys(allTags).sort((a, b) => {
+  if (a === 'all') return -1;
+  if (b === 'all') return 1;
+  return a.localeCompare(b);
+});
+let activeFilter = 'all';
+
+for (const tag of tagNames) {
+  const btn = document.createElement('button');
+  btn.className = `filter-btn${tag === 'all' ? ' active' : ''}`;
+  btn.textContent = `${tag} (${allTags[tag].length})`;
+  btn.dataset.tag = tag;
+  btn.onclick = () => {
+    activeFilter = tag;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMachines();
+  };
+  filtersEl.appendChild(btn);
+}
+
+// Render machines view
+function renderMachines() {
+  const grid = document.getElementById('machines-grid');
+  grid.innerHTML = '';
+  const visibleMachines = allTags[activeFilter] || [];
+
+  for (const name of visibleMachines.sort()) {
+    const machine = INVENTORY.machines[name];
+    const services = machineServiceMap[name] || [];
+    const activeInstances = new Set(services.map(s => s.instance));
+    const inactiveInstances = allInstanceNames.filter(i => !activeInstances.has(i));
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const tagsHtml = (machine.tags || [])
+      .filter(t => t !== 'all')
+      .map(t => `<span class="tag ${t}">${t}</span>`)
+      .join('');
+
+    const deployTarget = machine.deploy?.targetHost;
+
+    let servicesHtml = '';
+    for (const svc of services.sort((a, b) => a.instance.localeCompare(b.instance))) {
+      const settingsId = `settings-${name}-${svc.instance}`.replace(/[^a-zA-Z0-9-]/g, '_');
+      let settingsToggle = '';
+      let settingsPanel = '';
+
+      if (svc.settings && Object.keys(svc.settings).length > 0) {
+        const lines = Object.entries(svc.settings)
+          .map(([k, v]) => {
+            const val = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            return `<div class="settings-line"><span class="settings-key">${escHtml(k)}</span>: <span class="settings-value">${escHtml(val)}</span></div>`;
+          })
+          .join('');
+        settingsToggle = `<span class="settings-toggle" onclick="toggleSettings('${settingsId}')">details</span>`;
+        settingsPanel = `<div class="settings-panel" id="${settingsId}">${lines}</div>`;
+      }
+
+      servicesHtml += `
+        <li class="service-item">
+          <span class="service-dot active"></span>
+          <span class="service-name">${escHtml(svc.instance)}</span>
+          <span class="service-role">${escHtml(svc.role)}</span>
+        </li>
+        ${settingsToggle}${settingsPanel}`;
+    }
+
+    let inactiveHtml = '';
+    if (inactiveInstances.length > 0) {
+      inactiveHtml = `
+        <div class="section-label">Not configured (${inactiveInstances.length})</div>
+        <ul class="service-list">
+          ${inactiveInstances.map(i => `
+            <li class="service-item">
+              <span class="service-dot inactive"></span>
+              <span class="service-name">${escHtml(i)}</span>
+            </li>`).join('')}
+        </ul>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-name">${escHtml(name)}</span>
+        <div class="card-tags">${tagsHtml}</div>
+      </div>
+      ${deployTarget ? `<div class="deploy-info">${escHtml(deployTarget)}</div>` : ''}
+      <div class="section-label">Active (${services.length})</div>
+      <ul class="service-list">${servicesHtml}</ul>
+      ${inactiveHtml}`;
+
+    grid.appendChild(card);
+  }
+}
+
+// Render services view
+function renderServices() {
+  const grid = document.getElementById('services-grid');
+  grid.innerHTML = '';
+
+  for (const [instanceName, instance] of Object.entries(INVENTORY.instances).sort(([a], [b]) => a.localeCompare(b))) {
+    const card = document.createElement('div');
+    card.className = 'card service-card';
+
+    let rolesHtml = '';
+    for (const [roleName, roleData] of Object.entries(instance.roles || {})) {
+      const machines = Object.keys(roleData.machines || {});
+      // Include tag-expanded machines
+      for (const [tagName] of Object.entries(roleData.tags || {})) {
+        for (const m of (INVENTORY.tags[tagName] || [])) {
+          if (!machines.includes(m)) machines.push(m);
+        }
+      }
+      machines.sort();
+
+      rolesHtml += `
+        <div class="role-section">
+          <div class="role-name">${escHtml(roleName)}</div>
+          <div class="role-machines">
+            ${machines.map(m => `<span class="machine-chip">${escHtml(m)}</span>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    const moduleInput = instance.module?.input || '?';
+    const moduleName = instance.module?.name || '?';
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-name">${escHtml(instanceName)}</span>
+      </div>
+      <div class="module-info">${escHtml(moduleInput)} / ${escHtml(moduleName)}</div>
+      ${rolesHtml}`;
+
+    grid.appendChild(card);
+  }
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`${tab.dataset.view}-view`).classList.add('active');
+    if (tab.dataset.view === 'services') renderServices();
+  };
+});
+
+function toggleSettings(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Initial render
+renderMachines();
+</script>
+</body>
+</html>
