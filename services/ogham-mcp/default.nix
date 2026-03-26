@@ -190,7 +190,7 @@
             # ── Tmpfiles ─────────────────────────────────────────────────────
 
             systemd.tmpfiles.rules = [
-              "d /persist/ogham-mcp 0755 root root"
+              "d /persist/ogham-mcp 0755 ogham-mcp ogham-mcp"
               "d /persist/caddy 0700 caddy caddy"
             ];
           };
