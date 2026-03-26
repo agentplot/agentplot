@@ -82,7 +82,6 @@
 
               serviceConfig = {
                 ExecStartPre = "+${pkgs.bash}/bin/bash -c 'test -d /persist/gno/.config/gno || (cd /persist/gno && HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'";
-                WorkingDirectory = lib.mkForce "/persist/gno";
                 ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
