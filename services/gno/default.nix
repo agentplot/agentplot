@@ -81,12 +81,12 @@
               environment.GNO_CONFIG = toString gnoConfigFile;
 
               serviceConfig = {
-                ExecStartPre = "+${pkgs.bash}/bin/bash -c 'test -d /persist/gno/.config/gno || (cd /persist/gno && HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'";
+                ExecStartPre = "${pkgs.bash}/bin/bash -c 'test -f /persist/gno/.config/gno/config.json || (HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'";
                 ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
-                DynamicUser = true;
-                StateDirectory = "gno";
+                User = "gno";
+                Group = "gno";
                 WorkingDirectory = "/persist/gno";
                 ReadWritePaths = [ "/persist/gno" ];
               };
@@ -102,6 +102,14 @@
                 '';
               };
             };
+
+            users.users.gno = {
+              isSystemUser = true;
+              group = "gno";
+              home = "/persist/gno";
+              createHome = true;
+            };
+            users.groups.gno = { };
 
             networking.firewall.allowedTCPPorts = [ 443 ];
 

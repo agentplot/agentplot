@@ -145,16 +145,24 @@
                 Restart = "on-failure";
                 RestartSec = 5;
                 EnvironmentFile = [ "-/run/ogham-mcp.env" ];
-                DynamicUser = true;
-                StateDirectory = "ogham-mcp";
-                CacheDirectory = "ogham-mcp";
-                RuntimeDirectory = "ogham-mcp";
+                User = "ogham-mcp";
+                Group = "ogham-mcp";
+                WorkingDirectory = "/persist/ogham-mcp";
+                ReadWritePaths = [ "/persist/ogham-mcp" ];
                 Environment = [
-                  "UV_CACHE_DIR=/var/cache/ogham-mcp"
-                  "HOME=/var/lib/ogham-mcp"
-                  "XDG_DATA_HOME=/var/lib/ogham-mcp/.local/share"
+                  "UV_CACHE_DIR=/persist/ogham-mcp/.cache/uv"
+                  "HOME=/persist/ogham-mcp"
                 ];
               };
+            };
+
+            users.users.ogham-mcp = {
+              isSystemUser = true;
+              group = "ogham-mcp";
+              home = "/persist/ogham-mcp";
+              createHome = true;
+            };
+            users.groups.ogham-mcp = { };
             };
 
             # ── Caddy reverse proxy ──────────────────────────────────────────

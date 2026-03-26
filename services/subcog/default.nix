@@ -72,7 +72,7 @@
                 if [ -f /run/subcog.jwt ]; then
                   JWT_SECRET=$(cat /run/subcog.jwt)
                 else
-                  JWT_SECRET=$(openssl rand -hex 32)
+                  JWT_SECRET=$(openssl rand -base64 32)
                   echo "$JWT_SECRET" > /run/subcog.jwt
                 fi
                 printf '%s\n' \
