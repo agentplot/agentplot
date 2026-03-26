@@ -163,7 +163,6 @@
               createHome = true;
             };
             users.groups.ogham-mcp = { };
-            };
 
             # ── Caddy reverse proxy ──────────────────────────────────────────
 
