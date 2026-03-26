@@ -65,12 +65,21 @@
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
+              path = [ pkgs.openssl ];
               script = ''
                 DB_PASSWORD=$(cat ${dbPasswordPath})
+                # Generate a stable JWT secret (persists in env file across restarts)
+                if [ -f /run/subcog.jwt ]; then
+                  JWT_SECRET=$(cat /run/subcog.jwt)
+                else
+                  JWT_SECRET=$(openssl rand -hex 32)
+                  echo "$JWT_SECRET" > /run/subcog.jwt
+                fi
                 printf '%s\n' \
                   "SUBCOG_DATABASE_URL=postgresql://subcog:$DB_PASSWORD@10.0.0.1/subcog" \
                   "SUBCOG_PORT=${port}" \
                   "SUBCOG_HOST=127.0.0.1" \
+                  "SUBCOG_MCP_JWT_SECRET=$JWT_SECRET" \
                   > /run/subcog.env
               '';
             };

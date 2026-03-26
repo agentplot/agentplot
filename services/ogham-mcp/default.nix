@@ -148,9 +148,11 @@
                 DynamicUser = true;
                 StateDirectory = "ogham-mcp";
                 CacheDirectory = "ogham-mcp";
+                RuntimeDirectory = "ogham-mcp";
                 Environment = [
                   "UV_CACHE_DIR=/var/cache/ogham-mcp"
                   "HOME=/var/lib/ogham-mcp"
+                  "XDG_DATA_HOME=/var/lib/ogham-mcp/.local/share"
                 ];
               };
             };
