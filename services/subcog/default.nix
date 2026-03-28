@@ -23,6 +23,20 @@
             default = 8421;
             description = "HTTP port for the subcog server";
           };
+          llmProvider = lib.mkOption {
+            type = lib.types.enum [
+              "anthropic"
+              "openai"
+              "ollama"
+            ];
+            default = "anthropic";
+            description = "LLM provider for enrichment, consolidation, and auto-capture analysis";
+          };
+          llmModel = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = "LLM model name (empty = provider default)";
+          };
         };
       };
 
@@ -40,11 +54,23 @@
             ...
           }:
           let
+            needsApiKey = builtins.elem settings.llmProvider [
+              "anthropic"
+              "openai"
+            ];
             dbPasswordPath = config.clan.core.vars.generators."subcog-db-password".files."password".path;
+            jwtSecretPath = config.clan.core.vars.generators."subcog-jwt-secret".files."secret".path;
+            apiKeyPath =
+              if needsApiKey then
+                config.clan.core.vars.generators."subcog-llm-api-key".files."api-key".path
+              else
+                "";
             tlsConfig = config.caddy-cloudflare.tls;
             port = toString settings.port;
           in
           {
+            # ── Vars generators ──────────────────────────────────────────────
+
             clan.core.vars.generators."subcog-db-password" = {
               share = true;
               files."password" = {
@@ -57,6 +83,56 @@
               '';
             };
 
+            clan.core.vars.generators."subcog-jwt-secret" = {
+              share = true;
+              files."secret" = {
+                secret = true;
+                mode = "0440";
+              };
+              runtimeInputs = [ pkgs.openssl ];
+              script = ''
+                openssl rand -base64 32 > $out/secret
+              '';
+            };
+
+            clan.core.vars.generators."subcog-jwt-token" = {
+              share = true;
+              files."token" = {
+                secret = true;
+                mode = "0440";
+              };
+              runtimeInputs = [
+                pkgs.openssl
+                pkgs.coreutils
+              ];
+              script = ''
+                SECRET=$(cat ${jwtSecretPath})
+                # base64url encode (RFC 7515)
+                b64url() { openssl base64 -e | tr -d '=\n' | tr '/+' '_-'; }
+                HEADER=$(printf '{"alg":"HS256","typ":"JWT"}' | b64url)
+                EXP=$(( $(date +%s) + 315360000 ))
+                IAT=$(date +%s)
+                PAYLOAD=$(printf '{"sub":"agentplot","scopes":["*"],"exp":%d,"iat":%d}' "$EXP" "$IAT" | b64url)
+                SIG=$(printf '%s.%s' "$HEADER" "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" -binary | b64url)
+                printf '%s.%s.%s' "$HEADER" "$PAYLOAD" "$SIG" > $out/token
+              '';
+            };
+
+            clan.core.vars.generators."subcog-llm-api-key" = lib.mkIf needsApiKey {
+              prompts."api-key" = {
+                type = "hidden";
+                description = "API key for ${settings.llmProvider} LLM provider";
+              };
+              files."api-key" = {
+                secret = true;
+              };
+              script = ''
+                cp "$prompts/api-key" "$out/api-key"
+              '';
+            };
+
+            # ── Env file preparation ─────────────────────────────────────────
+
             systemd.services.subcog-env = {
               description = "Prepare subcog environment file";
               before = [ "subcog.service" ];
@@ -65,23 +141,30 @@
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-              path = [ pkgs.openssl ];
-              script = ''
-                DB_PASSWORD=$(cat ${dbPasswordPath})
-                # Generate a stable JWT secret (persists in env file across restarts)
-                if [ -f /run/subcog.jwt ]; then
-                  JWT_SECRET=$(cat /run/subcog.jwt)
-                else
-                  JWT_SECRET=$(openssl rand -base64 32)
-                  echo "$JWT_SECRET" > /run/subcog.jwt
-                fi
-                printf '%s\n' \
-                  "SUBCOG_DATABASE_URL=postgresql://subcog:$DB_PASSWORD@10.0.0.1/subcog" \
-                  "SUBCOG_PORT=${port}" \
-                  "SUBCOG_HOST=127.0.0.1" \
-                  "SUBCOG_MCP_JWT_SECRET=$JWT_SECRET" \
-                  > /run/subcog.env
-              '';
+              script =
+                let
+                  staticVars = lib.concatStringsSep "\n" (
+                    [
+                      "SUBCOG_STORAGE_BACKEND=postgresql"
+                      "SUBCOG_PORT=${port}"
+                      "SUBCOG_HOST=127.0.0.1"
+                      "SUBCOG_LLM_PROVIDER=${settings.llmProvider}"
+                    ]
+                    ++ lib.optional (settings.llmModel != "") "SUBCOG_LLM_MODEL=${settings.llmModel}"
+                  );
+                in
+                ''
+                  DB_PASSWORD=$(cat ${dbPasswordPath})
+                  JWT_SECRET=$(cat ${jwtSecretPath})
+                  {
+                    printf 'SUBCOG_STORAGE_CONNECTION_STRING=postgresql://subcog:%s@10.0.0.1/subcog\n' "$DB_PASSWORD"
+                    printf 'SUBCOG_MCP_JWT_SECRET=%s\n' "$JWT_SECRET"
+                    printf '%s\n' ${lib.escapeShellArg staticVars}
+                '' + lib.optionalString needsApiKey ''
+                    printf 'SUBCOG_LLM_API_KEY=%s\n' "$(cat ${apiKeyPath})"
+                '' + ''
+                  } > /run/subcog.env
+                '';
             };
 
             systemd.services.subcog = {
@@ -151,6 +234,9 @@
           cli = {
             package = ./packages/subcog-cli;
             wrapperName = client: "subcog-${client.name}";
+            envVars = client: {
+              SUBCOG_DOMAIN = client.domain;
+            };
           };
           mcp = {
             type = "http";
