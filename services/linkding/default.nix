@@ -134,8 +134,10 @@
 
             networking.firewall.allowedTCPPorts = [ 443 ];
 
+            clan.core.state.linkding.folders = [ "/persist/linkding" ];
+
             systemd.tmpfiles.rules = [
-              "d /persist/linkding 0755 root root"
+              "d /persist/linkding 0750 root root"
               "d /persist/caddy 0700 caddy caddy"
             ];
           };

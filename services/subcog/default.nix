@@ -216,7 +216,7 @@
             clan.core.state.subcog.folders = [ "/persist/subcog" ];
 
             systemd.tmpfiles.rules = [
-              "d /persist/subcog 0755 subcog subcog"
+              "d /persist/subcog 0750 subcog subcog"
               "d /persist/caddy 0700 caddy caddy"
             ];
           };

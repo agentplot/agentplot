@@ -114,7 +114,7 @@
             networking.firewall.allowedTCPPorts = [ 443 ];
 
             systemd.tmpfiles.rules = [
-              "d /persist/gno 0755 gno gno"
+              "d /persist/gno 0750 gno gno"
               "d /persist/caddy 0700 caddy caddy"
             ];
 
