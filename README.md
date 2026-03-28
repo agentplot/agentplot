@@ -90,8 +90,8 @@ Client roles produce Home Manager modules that accumulate through `agentplot.hmM
 {
   imports = [ agentplot.darwinModules.agentplot ];  # or nixosModules
 
-  agentplot.user = "chuck";
-  # All service HM modules are now wired into home-manager.users.chuck
+  agentplot.user = "alice";
+  # All service HM modules are now wired into home-manager.users.alice
 }
 ```
 

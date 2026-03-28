@@ -566,12 +566,15 @@
 
         darwinModule =
           { config, pkgs, lib, ... }:
+          let
+            user = config.agentplot.user;
+          in
           {
             clan.core.vars.generators.openclaw-gateway-token = {
               share = true;
               files.token = {
                 secret = true;
-                owner = "chuck";
+                owner = user;
                 group = "staff";
               };
               runtimeInputs = [ pkgs.openssl ];
@@ -579,7 +582,7 @@
                 openssl rand -hex 32 > $out/token
               '';
             };
-            home-manager.users.chuck = {
+            home-manager.users.${user} = {
               imports = [
                 (tokenActivationModule { sysConfig = config; sysPkgs = pkgs; configPath = "$HOME/.openclaw/openclaw.json"; })
               ];

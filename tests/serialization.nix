@@ -80,7 +80,7 @@ let
       nixosStubs
       {
         config.networking.hostName = "mac-studio";
-        config.agentplot.user = "chuck";
+        config.agentplot.user = "alice";
         config.agentplot._contributedCliTools = [ "linkding-biz" "subcog-personal" ];
         config.agentplot.hmModules.linkding-biz = { ... }: {
           # stdio transport: command/args/env
@@ -176,7 +176,7 @@ assert builtins.hasAttr "profiles" s;
 
 # Identification fields
 assert s.machine == "mac-studio";
-assert s.user == "chuck";
+assert s.user == "alice";
 
 # MCP servers: three entries with all transport types
 assert builtins.length (builtins.attrNames s.mcpServers) == 3;
