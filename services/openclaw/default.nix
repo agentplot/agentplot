@@ -523,16 +523,24 @@
         # with the actual secret value. Runs after openclawConfigFiles which
         # symlinks the nix-store config into place. Uses lib.hm.dag which
         # is only available inside HM module context.
-        tokenActivationModule = { sysConfig, sysPkgs, configPath }: { lib, ... }: {
+        tokenActivationModule = { sysConfig, sysPkgs, configPath }: { lib, ... }:
+          let
+            cat = lib.getExe' sysPkgs.coreutils "cat";
+            mktemp = lib.getExe' sysPkgs.coreutils "mktemp";
+            sed = lib.getExe' sysPkgs.gnused "sed";
+            rm = lib.getExe' sysPkgs.coreutils "rm";
+            mv = lib.getExe' sysPkgs.coreutils "mv";
+            tokenFile = sysConfig.clan.core.vars.generators.openclaw-gateway-token.files.token.path;
+          in {
           home.activation.openclawInjectToken = lib.hm.dag.entryAfter [ "openclawConfigFiles" ] ''
-            _tokenFile="${sysConfig.clan.core.vars.generators.openclaw-gateway-token.files.token.path}"
+            _tokenFile="${tokenFile}"
             _configFile="${configPath}"
-            if [ -f "$_tokenFile" ] && [ -e "$_configFile" ]; then
-              _token="$(${lib.getExe' sysPkgs.coreutils "cat"} "$_tokenFile")"
-              _tmpConfig="$(${lib.getExe' sysPkgs.coreutils "mktemp"}")"
-              ${lib.getExe' sysPkgs.gnused "sed"} "s|${tokenPlaceholder}|$_token|g" "$_configFile" > "$_tmpConfig"
-              ${lib.getExe' sysPkgs.coreutils "rm"} -f "$_configFile"
-              ${lib.getExe' sysPkgs.coreutils "mv"} "$_tmpConfig" "$_configFile"
+            if [ -f "''$_tokenFile" ] && [ -e "''$_configFile" ]; then
+              _token="$(${cat} "''$_tokenFile")"
+              _tmpConfig="$(${mktemp})"
+              ${sed} "s|${tokenPlaceholder}|''$_token|g" "''$_configFile" > "''$_tmpConfig"
+              ${rm} -f "''$_configFile"
+              ${mv} "''$_tmpConfig" "''$_configFile"
             fi
           '';
         };
