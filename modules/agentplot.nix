@@ -1,6 +1,8 @@
 { config, lib, ... }:
 let
   cfg = config.agentplot;
+  hasUser = cfg.user != null;
+  hasModules = cfg.hmModules != { };
 in
 {
   options.agentplot = {
@@ -29,11 +31,71 @@ in
         The adapter wires all entries into home-manager.users.''${agentplot.user}.
       '';
     };
-  };
 
-  config = lib.mkIf (cfg.user != null && cfg.hmModules != { }) {
-    home-manager.users.${cfg.user} = {
-      imports = cfg.hmBaseModules ++ lib.attrValues cfg.hmModules;
+    _contributedCliTools = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      internal = true;
+      description = "CLI tool names contributed by agentplot services. Populated by mkClientTooling.";
+    };
+
+    serialization = lib.mkOption {
+      type = lib.types.nullOr lib.types.attrs;
+      default = null;
+      description = ''
+        JSON-serializable snapshot of evaluated agentplot capabilities for this machine/user.
+        Null when agentplot.user is unset. Used by mkCapabilitiesDashboard to build
+        cross-machine capability views.
+
+        Requires claude-code and agent-deck HM modules to be present when hmModules
+        is non-empty (i.e., when services are configured).
+      '';
     };
   };
+
+  config = lib.mkMerge [
+    (lib.mkIf (hasUser && hasModules) {
+      home-manager.users.${cfg.user} = {
+        imports = cfg.hmBaseModules ++ lib.attrValues cfg.hmModules;
+      };
+    })
+
+    (lib.mkIf hasUser {
+      agentplot.serialization =
+        if !hasModules then
+          {
+            machine = config.networking.hostName;
+            user = cfg.user;
+            mcpServers = { };
+            skills = [ ];
+            cliTools = [ ];
+            agentDeckMcps = { };
+            profiles = { };
+          }
+        else
+          let
+            hmCfg = config.home-manager.users.${cfg.user};
+            ccCfg = hmCfg.programs.claude-code;
+
+            # Extract command/args/env from MCP server submodules, dropping module metadata
+            serializeMcpServer = _name: srv: {
+              inherit (srv) command args;
+              env = srv.env or { };
+            };
+
+            serializeProfile = _name: prof: {
+              mcpServers = builtins.attrNames prof.mcpServers;
+            };
+          in
+          {
+            machine = config.networking.hostName;
+            user = cfg.user;
+            mcpServers = lib.mapAttrs serializeMcpServer ccCfg.mcpServers;
+            skills = builtins.attrNames hmCfg.programs.agent-skills.sources;
+            cliTools = cfg._contributedCliTools;
+            agentDeckMcps = lib.mapAttrs serializeMcpServer hmCfg.programs.agent-deck.mcps;
+            profiles = lib.mapAttrs serializeProfile ccCfg.profiles;
+          };
+    })
+  ];
 }

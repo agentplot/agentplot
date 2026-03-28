@@ -1,19 +1,19 @@
 ## 1. Serialization Module
 
-- [ ] 1.1 Add `agentplot.serialization` option to `modules/agentplot.nix` that evaluates to a JSON-serializable attrset (or null when user is unset)
-- [ ] 1.2 Extract `mcpServers` from evaluated `home-manager.users.<user>.programs.claude-code.mcpServers` — preserve type and URL, strip non-serializable fields
-- [ ] 1.3 Extract `skills` from evaluated `home-manager.users.<user>.programs.agent-skills.sources` as a list of source names
-- [ ] 1.4 Extract `cliTools` — determine approach for identifying agentplot-contributed packages in `home.packages` (convention, internal tracking option, or name-matching)
-- [ ] 1.5 Extract `agentDeckMcps` from evaluated `home-manager.users.<user>.programs.agent-deck.mcps`
-- [ ] 1.6 Extract `profiles` from evaluated `home-manager.users.<user>.programs.claude-code.profiles` including per-profile MCP server lists
-- [ ] 1.7 Include `machine` (from `config.networking.hostName`) and `user` (from `config.agentplot.user`) identification fields
+- [x] 1.1 Add `agentplot.serialization` option to `modules/agentplot.nix` that evaluates to a JSON-serializable attrset (or null when user is unset)
+- [x] 1.2 Extract `mcpServers` from evaluated `home-manager.users.<user>.programs.claude-code.mcpServers` — preserve type and URL, strip non-serializable fields
+- [x] 1.3 Extract `skills` from evaluated `home-manager.users.<user>.programs.agent-skills.sources` as a list of source names
+- [x] 1.4 Extract `cliTools` — determine approach for identifying agentplot-contributed packages in `home.packages` (convention, internal tracking option, or name-matching)
+- [x] 1.5 Extract `agentDeckMcps` from evaluated `home-manager.users.<user>.programs.agent-deck.mcps`
+- [x] 1.6 Extract `profiles` from evaluated `home-manager.users.<user>.programs.claude-code.profiles` including per-profile MCP server lists
+- [x] 1.7 Include `machine` (from `config.networking.hostName`) and `user` (from `config.agentplot.user`) identification fields
 
 ## 2. Nix Evaluation Tests
 
-- [ ] 2.1 Add serialization smoke test: evaluate `config.agentplot.serialization` with mock HM modules and verify expected shape (keys present, types correct)
-- [ ] 2.2 Add null-user test: verify serialization is null when `agentplot.user` is unset
-- [ ] 2.3 Add empty-modules test: verify serialization produces empty collections when user is set but no services configured
-- [ ] 2.4 Add JSON roundtrip test: verify `builtins.toJSON config.agentplot.serialization` succeeds without errors
+- [x] 2.1 Add serialization smoke test: evaluate `config.agentplot.serialization` with mock HM modules and verify expected shape (keys present, types correct)
+- [x] 2.2 Add null-user test: verify serialization is null when `agentplot.user` is unset
+- [x] 2.3 Add empty-modules test: verify serialization produces empty collections when user is set but no services configured
+- [x] 2.4 Add JSON roundtrip test: verify `builtins.toJSON config.agentplot.serialization` succeeds without errors
 
 ## 3. Dashboard Builders
 
