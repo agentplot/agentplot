@@ -231,16 +231,35 @@
         serviceName = "subcog";
         capabilities = {
           skills = [ ./skills/cli/SKILL.md ];
+          secret = [
+            {
+              name = "db-password";
+              mode = "shared";
+              generator = "subcog-db-password";
+              file = "password";
+            }
+            {
+              name = "jwt-token";
+              mode = "shared";
+              generator = "subcog-jwt-token";
+              file = "token";
+            }
+          ];
           cli = {
             package = ./packages/subcog-cli;
             wrapperName = client: "subcog-${client.name}";
             envVars = client: {
               SUBCOG_DOMAIN = client.domain;
+              SUBCOG_STORAGE_BACKEND = "postgresql";
+              SUBCOG_STORAGE_CONNECTION_STRING = "postgresql://subcog:$(cat ${client.secretPaths."db-password"})@${client.domain}/subcog";
             };
           };
           mcp = {
             type = "http";
             urlTemplate = client: "https://${client.domain}/mcp";
+            extraConfig = client: {
+              tokenFile = client.secretPaths."jwt-token";
+            };
           };
         };
         extraClientOptions = { lib, ... }: {
