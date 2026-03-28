@@ -67,11 +67,13 @@
         imports = [ ./modules/agentplot.nix ];
         config.agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
       };
+      nixosModules.dashboards = import ./modules/dashboards.nix;
       nixosModules.oidc = import ./modules/oidc.nix;
       darwinModules.agentplot = {
         imports = [ ./modules/agentplot.nix ];
         config.agentplot.hmBaseModules = [ agent-skills-nix.homeManagerModules.default ];
       };
+      darwinModules.dashboards = import ./modules/dashboards.nix;
       darwinModules.oidc = import ./modules/oidc.nix;
 
       lib = {
@@ -79,6 +81,31 @@
           import ./packages/fleet-dashboard { inherit pkgs inventorySerialization; };
         mkFleetInventory = { pkgs, inventorySerialization }:
           import ./packages/fleet-dashboard/inventory.nix { inherit pkgs inventorySerialization; };
+
+        # Capabilities dashboard — cross-machine view of evaluated HM config.
+        #
+        # capabilitiesSerialization must be assembled by the consumer from per-machine
+        # evaluated configs. Each machine's config.agentplot.serialization produces one
+        # blob; the consumer collects them into a single attrset:
+        #
+        #   capabilitiesSerialization = {
+        #     machines = {
+        #       # NixOS machines:
+        #       openclaw   = nixosConfigurations.openclaw.config.agentplot.serialization;
+        #       swancloud  = nixosConfigurations.swancloud.config.agentplot.serialization;
+        #       # Darwin machines:
+        #       mac-studio = darwinConfigurations.mac-studio.config.agentplot.serialization;
+        #       macbook    = darwinConfigurations.macbook.config.agentplot.serialization;
+        #     };
+        #   };
+        #
+        # Then pass to mkCapabilitiesDashboard/mkCapabilitiesInventory:
+        #   dashboard = inputs.agentplot.lib.mkCapabilitiesDashboard { inherit pkgs capabilitiesSerialization; };
+        #   inventory = inputs.agentplot.lib.mkCapabilitiesInventory { inherit pkgs capabilitiesSerialization; };
+        mkCapabilitiesDashboard = { pkgs, capabilitiesSerialization }:
+          import ./packages/capabilities-dashboard { inherit pkgs capabilitiesSerialization; };
+        mkCapabilitiesInventory = { pkgs, capabilitiesSerialization }:
+          import ./packages/capabilities-dashboard/inventory.nix { inherit pkgs capabilitiesSerialization; };
       };
 
       packages = forAllSystems (

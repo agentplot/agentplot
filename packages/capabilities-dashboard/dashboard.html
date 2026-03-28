@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capabilities Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --orange: #d2a038;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 1.5rem;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .header h1 { font-size: 1.5rem; font-weight: 600; }
+  .header .subtitle { color: var(--text-muted); font-size: 0.9rem; }
+  .summary {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .summary .stat { color: var(--text-muted); }
+  .summary .stat strong { color: var(--text); }
+
+  /* Search */
+  .search-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    max-width: 400px;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  /* Filter pills */
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    font-size: 0.85rem;
+    transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  /* Machine grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+  }
+  .card-name { font-weight: 600; font-size: 0.95rem; }
+  .card-user { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem; }
+
+  /* Capability sections */
+  .cap-section { margin-top: 0.75rem; }
+  .cap-section:first-of-type { margin-top: 0; }
+  .cap-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .cap-count {
+    font-size: 0.65rem;
+    background: var(--border);
+    padding: 0.05rem 0.35rem;
+    border-radius: 0.75rem;
+    color: var(--text-muted);
+  }
+  .cap-list { list-style: none; }
+  .cap-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.15rem 0;
+    font-size: 0.85rem;
+  }
+  .cap-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-mcp { background: var(--accent); }
+  .dot-skill { background: var(--green); }
+  .dot-cli { background: var(--yellow); }
+  .dot-deck { background: var(--purple); }
+  .cap-name { flex: 1; }
+  .cap-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Profiles sub-section */
+  .profiles-section { margin-top: 0.75rem; }
+  .profile-block {
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    background: var(--bg);
+    border-radius: 0.25rem;
+  }
+  .profile-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .profile-mcps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .profile-chip {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    background: var(--border);
+    color: var(--text);
+  }
+
+  /* Comparison matrix */
+  .matrix-container {
+    overflow-x: auto;
+    margin-top: 0.5rem;
+  }
+  .matrix {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+  .matrix th, .matrix td {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .matrix th {
+    background: var(--surface);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+  }
+  .matrix th.machine-col {
+    color: var(--accent);
+    min-width: 80px;
+  }
+  .matrix td.cap-name-col {
+    font-weight: 500;
+    white-space: nowrap;
+    background: var(--surface);
+    position: sticky;
+    left: 0;
+  }
+  .matrix td.type-col {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--surface);
+    position: sticky;
+    left: 0;
+  }
+  .matrix .check { color: var(--green); text-align: center; }
+  .matrix .miss { color: var(--border); text-align: center; }
+
+  /* View toggle */
+  .view-container { display: none; }
+  .view-container.active { display: block; }
+
+  .empty-state {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 2rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Capabilities Dashboard</h1>
+  <span class="subtitle">Evaluated agentplot capabilities per machine</span>
+</div>
+<div class="summary" id="summary"></div>
+
+<div class="search-bar">
+  <input type="text" class="search-input" id="search" placeholder="Filter by capability or machine name...">
+</div>
+
+<div class="filters" id="filters"></div>
+
+<div class="tabs">
+  <div class="tab active" data-view="machines">Machines</div>
+  <div class="tab" data-view="comparison">Comparison</div>
+</div>
+
+<div class="view-container active" id="machines-view">
+  <div class="grid" id="machines-grid"></div>
+</div>
+
+<div class="view-container" id="comparison-view">
+  <div class="matrix-container" id="matrix-container"></div>
+</div>
+
+<script>
+const DATA = __CAPABILITIES_JSON__;
+const machines = DATA.machines || {};
+const machineNames = Object.keys(machines).sort();
+
+// Collect all capabilities across machines for comparison
+function collectAllCapabilities() {
+  const caps = { mcpServers: new Set(), skills: new Set(), cliTools: new Set(), agentDeckMcps: new Set() };
+  for (const m of Object.values(machines)) {
+    if (!m) continue;
+    Object.keys(m.mcpServers || {}).forEach(k => caps.mcpServers.add(k));
+    (m.skills || []).forEach(k => caps.skills.add(k));
+    (m.cliTools || []).forEach(k => caps.cliTools.add(k));
+    Object.keys(m.agentDeckMcps || {}).forEach(k => caps.agentDeckMcps.add(k));
+  }
+  return caps;
+}
+
+const allCaps = collectAllCapabilities();
+
+// Count totals
+const totalMcp = allCaps.mcpServers.size;
+const totalSkills = allCaps.skills.size;
+const totalCli = allCaps.cliTools.size;
+const totalDeck = allCaps.agentDeckMcps.size;
+
+document.getElementById('summary').innerHTML = `
+  <span class="stat"><strong>${machineNames.length}</strong> machines</span>
+  <span class="stat"><strong>${totalMcp}</strong> MCP servers</span>
+  <span class="stat"><strong>${totalSkills}</strong> skills</span>
+  <span class="stat"><strong>${totalCli}</strong> CLI tools</span>
+  <span class="stat"><strong>${totalDeck}</strong> agent-deck MCPs</span>
+`;
+
+// Filter state
+let activeFilter = 'all';
+let searchQuery = '';
+
+const typeFilters = [
+  { key: 'all', label: 'All' },
+  { key: 'mcpServers', label: 'MCP Servers' },
+  { key: 'skills', label: 'Skills' },
+  { key: 'cliTools', label: 'CLI Tools' },
+  { key: 'agentDeckMcps', label: 'Agent-Deck MCPs' },
+];
+
+// Render filter buttons
+const filtersEl = document.getElementById('filters');
+for (const f of typeFilters) {
+  const btn = document.createElement('button');
+  btn.className = `filter-btn${f.key === 'all' ? ' active' : ''}`;
+  btn.textContent = f.label;
+  btn.dataset.filter = f.key;
+  btn.onclick = () => {
+    activeFilter = f.key;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMachines();
+    renderComparison();
+  };
+  filtersEl.appendChild(btn);
+}
+
+// Search handler
+document.getElementById('search').addEventListener('input', (e) => {
+  searchQuery = e.target.value.toLowerCase();
+  renderMachines();
+  renderComparison();
+});
+
+// Check if a machine matches the current search
+function machineMatchesSearch(name, m) {
+  if (!searchQuery) return true;
+  if (name.toLowerCase().includes(searchQuery)) return true;
+  if ((m.user || '').toLowerCase().includes(searchQuery)) return true;
+  for (const k of Object.keys(m.mcpServers || {})) {
+    if (k.toLowerCase().includes(searchQuery)) return true;
+  }
+  for (const s of (m.skills || [])) {
+    if (s.toLowerCase().includes(searchQuery)) return true;
+  }
+  for (const c of (m.cliTools || [])) {
+    if (c.toLowerCase().includes(searchQuery)) return true;
+  }
+  for (const k of Object.keys(m.agentDeckMcps || {})) {
+    if (k.toLowerCase().includes(searchQuery)) return true;
+  }
+  return false;
+}
+
+function capMatchesSearch(name) {
+  if (!searchQuery) return true;
+  return name.toLowerCase().includes(searchQuery);
+}
+
+function shouldShowSection(type) {
+  return activeFilter === 'all' || activeFilter === type;
+}
+
+// Render machine cards
+function renderMachines() {
+  const grid = document.getElementById('machines-grid');
+  grid.innerHTML = '';
+
+  const visible = machineNames.filter(n => {
+    const m = machines[n];
+    return m && machineMatchesSearch(n, m);
+  });
+
+  if (visible.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No machines match the current filter.</div>';
+    return;
+  }
+
+  for (const name of visible) {
+    const m = machines[name];
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    let html = `
+      <div class="card-header">
+        <span class="card-name">${esc(name)}</span>
+      </div>
+      <div class="card-user">${esc(m.user || 'unknown')}</div>`;
+
+    // MCP servers
+    const mcpEntries = Object.entries(m.mcpServers || {}).filter(([k]) => capMatchesSearch(k));
+    if (shouldShowSection('mcpServers') && mcpEntries.length > 0) {
+      html += `<div class="cap-section">
+        <div class="cap-label">MCP Servers <span class="cap-count">${mcpEntries.length}</span></div>
+        <ul class="cap-list">
+          ${mcpEntries.map(([k, v]) => `
+            <li class="cap-item">
+              <span class="cap-dot dot-mcp"></span>
+              <span class="cap-name">${esc(k)}</span>
+              <span class="cap-detail">${esc(v.args?.join(' ') || '')}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`;
+    }
+
+    // Skills
+    const skillEntries = (m.skills || []).filter(capMatchesSearch);
+    if (shouldShowSection('skills') && skillEntries.length > 0) {
+      html += `<div class="cap-section">
+        <div class="cap-label">Skills <span class="cap-count">${skillEntries.length}</span></div>
+        <ul class="cap-list">
+          ${skillEntries.map(s => `
+            <li class="cap-item">
+              <span class="cap-dot dot-skill"></span>
+              <span class="cap-name">${esc(s)}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`;
+    }
+
+    // CLI tools
+    const cliEntries = (m.cliTools || []).filter(capMatchesSearch);
+    if (shouldShowSection('cliTools') && cliEntries.length > 0) {
+      html += `<div class="cap-section">
+        <div class="cap-label">CLI Tools <span class="cap-count">${cliEntries.length}</span></div>
+        <ul class="cap-list">
+          ${cliEntries.map(c => `
+            <li class="cap-item">
+              <span class="cap-dot dot-cli"></span>
+              <span class="cap-name">${esc(c)}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`;
+    }
+
+    // Agent-deck MCPs
+    const deckEntries = Object.entries(m.agentDeckMcps || {}).filter(([k]) => capMatchesSearch(k));
+    if (shouldShowSection('agentDeckMcps') && deckEntries.length > 0) {
+      html += `<div class="cap-section">
+        <div class="cap-label">Agent-Deck MCPs <span class="cap-count">${deckEntries.length}</span></div>
+        <ul class="cap-list">
+          ${deckEntries.map(([k]) => `
+            <li class="cap-item">
+              <span class="cap-dot dot-deck"></span>
+              <span class="cap-name">${esc(k)}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`;
+    }
+
+    // Profiles
+    const profileEntries = Object.entries(m.profiles || {});
+    if (shouldShowSection('mcpServers') && profileEntries.length > 0) {
+      html += `<div class="profiles-section">
+        <div class="cap-label">Profiles <span class="cap-count">${profileEntries.length}</span></div>
+        ${profileEntries.map(([pName, prof]) => `
+          <div class="profile-block">
+            <div class="profile-name">${esc(pName)}</div>
+            <div class="profile-mcps">
+              ${(prof.mcpServers || []).map(s => `<span class="profile-chip">${esc(s)}</span>`).join('')}
+              ${(prof.mcpServers || []).length === 0 ? '<span class="cap-detail">no MCP servers</span>' : ''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }
+
+    card.innerHTML = html;
+    grid.appendChild(card);
+  }
+}
+
+// Render comparison matrix
+function renderComparison() {
+  const container = document.getElementById('matrix-container');
+
+  const visibleMachines = machineNames.filter(n => {
+    const m = machines[n];
+    return m && machineMatchesSearch(n, m);
+  });
+
+  if (visibleMachines.length === 0) {
+    container.innerHTML = '<div class="empty-state">No machines match the current filter.</div>';
+    return;
+  }
+
+  // Build rows: each capability as a row, machines as columns
+  const rows = [];
+  const addRows = (type, label, items) => {
+    if (!shouldShowSection(type)) return;
+    const filtered = [...items].filter(capMatchesSearch).sort();
+    for (const cap of filtered) {
+      rows.push({ type: label, name: cap, typeKey: type });
+    }
+  };
+  addRows('mcpServers', 'MCP', allCaps.mcpServers);
+  addRows('skills', 'Skill', allCaps.skills);
+  addRows('cliTools', 'CLI', allCaps.cliTools);
+  addRows('agentDeckMcps', 'Deck', allCaps.agentDeckMcps);
+
+  if (rows.length === 0) {
+    container.innerHTML = '<div class="empty-state">No capabilities match the current filter.</div>';
+    return;
+  }
+
+  let html = '<table class="matrix"><thead><tr><th>Type</th><th>Capability</th>';
+  for (const mn of visibleMachines) {
+    html += `<th class="machine-col">${esc(mn)}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (const row of rows) {
+    html += `<tr><td class="type-col">${esc(row.type)}</td><td class="cap-name-col">${esc(row.name)}</td>`;
+    for (const mn of visibleMachines) {
+      const m = machines[mn];
+      let has = false;
+      if (row.typeKey === 'mcpServers') has = !!(m.mcpServers || {})[row.name];
+      else if (row.typeKey === 'skills') has = (m.skills || []).includes(row.name);
+      else if (row.typeKey === 'cliTools') has = (m.cliTools || []).includes(row.name);
+      else if (row.typeKey === 'agentDeckMcps') has = !!(m.agentDeckMcps || {})[row.name];
+      html += has
+        ? '<td class="check">&#x2713;</td>'
+        : '<td class="miss">&#x2014;</td>';
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`${tab.dataset.view}-view`).classList.add('active');
+    if (tab.dataset.view === 'comparison') renderComparison();
+  };
+});
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Initial render
+renderMachines();
+</script>
+</body>
+</html>

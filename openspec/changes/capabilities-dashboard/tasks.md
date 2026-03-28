@@ -17,23 +17,23 @@
 
 ## 3. Dashboard Builders
 
-- [ ] 3.1 Create `packages/capabilities-dashboard/default.nix` — `mkCapabilitiesDashboard` function taking `{ pkgs, capabilitiesSerialization }`, embeds JSON in HTML via `__CAPABILITIES_JSON__` placeholder
-- [ ] 3.2 Create `packages/capabilities-dashboard/inventory.nix` — `mkCapabilitiesInventory` function producing plain JSON file
-- [ ] 3.3 Add `lib.mkCapabilitiesDashboard` and `lib.mkCapabilitiesInventory` exports to `flake.nix`
-- [ ] 3.4 Add inline documentation to lib functions with complete multi-machine assembly example showing NixOS + Darwin collection pattern
+- [x] 3.1 Create `packages/capabilities-dashboard/default.nix` — `mkCapabilitiesDashboard` function taking `{ pkgs, capabilitiesSerialization }`, embeds JSON in HTML via `__CAPABILITIES_JSON__` placeholder
+- [x] 3.2 Create `packages/capabilities-dashboard/inventory.nix` — `mkCapabilitiesInventory` function producing plain JSON file
+- [x] 3.3 Add `lib.mkCapabilitiesDashboard` and `lib.mkCapabilitiesInventory` exports to `flake.nix`
+- [x] 3.4 Add inline documentation to lib functions with complete multi-machine assembly example showing NixOS + Darwin collection pattern
 
 ## 4. Dashboard Serving Module
 
-- [ ] 4.1 Create `modules/dashboards.nix` with `agentplot.dashboards` options: `enable`, `domain`, `sites` (attrset of name → derivation)
-- [ ] 4.2 Generate Caddy virtual host config with path-based routing (`/<site-name>/`) and `file_server` directive per site
-- [ ] 4.3 Wire TLS via `config.caddy-cloudflare.tls` from agentplot-kit
-- [ ] 4.4 Export as `nixosModules.dashboards` and `darwinModules.dashboards` in `flake.nix`
-- [ ] 4.5 Add enable guard — no Caddy config generated when `agentplot.dashboards.enable` is false (default)
+- [x] 4.1 Create `modules/dashboards.nix` with `agentplot.dashboards` options: `enable`, `domain`, `sites` (attrset of name → derivation)
+- [x] 4.2 Generate Caddy virtual host config with path-based routing (`/<site-name>/`) and `file_server` directive per site
+- [x] 4.3 Wire TLS via `config.caddy-cloudflare.tls` from agentplot-kit
+- [x] 4.4 Export as `nixosModules.dashboards` and `darwinModules.dashboards` in `flake.nix`
+- [x] 4.5 Add enable guard — no Caddy config generated when `agentplot.dashboards.enable` is false (default)
 
 ## 5. Dashboard HTML
 
-- [ ] 5.1 Create `packages/capabilities-dashboard/dashboard.html` — base structure with dark theme matching fleet dashboard palette
-- [ ] 5.2 Implement machine card view — grid of cards, each showing machine name, user, and capabilities grouped by type (MCP servers, skills, CLI tools, agent-deck MCPs)
-- [ ] 5.3 Implement profile display — show Claude Code profiles within each machine card with their MCP server assignments
-- [ ] 5.4 Implement cross-machine comparison view — matrix or side-by-side layout allowing capability diffing across machines
-- [ ] 5.5 Add filtering/search — filter by capability type, machine name, or specific capability name
+- [x] 5.1 Create `packages/capabilities-dashboard/dashboard.html` — base structure with dark theme matching fleet dashboard palette
+- [x] 5.2 Implement machine card view — grid of cards, each showing machine name, user, and capabilities grouped by type (MCP servers, skills, CLI tools, agent-deck MCPs)
+- [x] 5.3 Implement profile display — show Claude Code profiles within each machine card with their MCP server assignments
+- [x] 5.4 Implement cross-machine comparison view — matrix or side-by-side layout allowing capability diffing across machines
+- [x] 5.5 Add filtering/search — filter by capability type, machine name, or specific capability name
