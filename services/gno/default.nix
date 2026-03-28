@@ -81,12 +81,7 @@
               environment.GNO_CONFIG = toString gnoConfigFile;
 
               serviceConfig = {
-                ExecStartPre = [
-                  # Fix ownership if files were created by a previous root-run init
-                  "+${pkgs.bash}/bin/bash -c '${pkgs.coreutils}/bin/chown -R gno:gno /persist/gno'"
-                  # Init if not already done (gno creates index.yml, not config.json)
-                  "${pkgs.bash}/bin/bash -c 'test -f /persist/gno/.config/gno/index.yml || (HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'"
-                ];
+                ExecStartPre = "${pkgs.bash}/bin/bash -c 'test -f /persist/gno/.config/gno/index.yml || (HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'";
                 ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
@@ -120,6 +115,7 @@
 
             systemd.tmpfiles.rules = [
               "d /persist/gno 0750 gno gno"
+              "Z /persist/gno 0750 gno gno"
               "d /persist/caddy 0700 caddy caddy"
             ];
 
