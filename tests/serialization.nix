@@ -1,24 +1,20 @@
 # Smoke test: verify agentplot.serialization extracts evaluated HM config into a
 # JSON-serializable attrset with the correct shape.
+# Covers: stdio, HTTP, and SSE MCP transports; null user; empty modules; JSON roundtrip.
 # Run: nix-instantiate --eval tests/serialization.nix
 let
   pkgs = import <nixpkgs> { };
   lib = pkgs.lib;
 
   # ── Stub option definitions (mirroring real HM modules) ────────────────────
-
-  mcpServerType = lib.types.submodule {
-    options = {
-      command = lib.mkOption { type = lib.types.str; };
-      args = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; };
-      env = lib.mkOption { type = lib.types.attrsOf lib.types.str; default = { }; };
-    };
-  };
+  # The real claude-code module uses jsonFormat.type (freeform JSON) for mcpServers,
+  # allowing any transport: stdio (command/args/env), HTTP (url/type/tokenFile),
+  # SSE (url/type). We mirror this with attrsOf anything.
 
   claudeCodeOptions = { lib, ... }: {
     options.programs.claude-code = {
       mcpServers = lib.mkOption {
-        type = lib.types.attrsOf mcpServerType;
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.anything);
         default = { };
       };
       skills = lib.mkOption {
@@ -28,7 +24,7 @@ let
       profiles = lib.mkOption {
         type = lib.types.attrsOf (lib.types.submodule {
           options.mcpServers = lib.mkOption {
-            type = lib.types.attrsOf mcpServerType;
+            type = lib.types.attrsOf (lib.types.attrsOf lib.types.anything);
             default = { };
           };
         });
@@ -76,7 +72,7 @@ let
     };
   };
 
-  # ── Test 1: Smoke test — full config with services ─────────────────────────
+  # ── Test 1: Smoke test — full config with all transport types ──────────────
 
   fullEval = lib.evalModules {
     modules = [
@@ -87,6 +83,7 @@ let
         config.agentplot.user = "chuck";
         config.agentplot._contributedCliTools = [ "linkding-biz" "subcog-personal" ];
         config.agentplot.hmModules.linkding-biz = { ... }: {
+          # stdio transport: command/args/env
           programs.claude-code.mcpServers.linkding-biz = {
             command = "/nix/store/mock/bin/linkding-biz";
             args = [ "mcp" ];
@@ -105,21 +102,29 @@ let
           };
         };
         config.agentplot.hmModules.subcog-personal = { ... }: {
+          # HTTP transport: url/type/tokenFile
           programs.claude-code.mcpServers.subcog-personal = {
-            command = "/nix/store/mock/bin/subcog";
-            args = [ "mcp" ];
-            env.SUBCOG_BASE_URL = "https://subcog.example.com";
+            url = "https://subcog.example.com/mcp";
+            type = "http";
+            tokenFile = "/run/secrets/subcog-token";
           };
           programs.claude-code.profiles.business.mcpServers.linkding-biz = {
             command = "/nix/store/mock/bin/linkding-biz";
             args = [ "mcp" ];
           };
           programs.claude-code.profiles.personal.mcpServers.subcog-personal = {
-            command = "/nix/store/mock/bin/subcog";
-            args = [ "mcp" ];
+            url = "https://subcog.example.com/mcp";
+            type = "http";
           };
           programs.agent-skills.sources."agentplot-subcog" = {
             path = ./.;
+          };
+        };
+        config.agentplot.hmModules.ogham-mcp = { ... }: {
+          # SSE transport: url/type
+          programs.claude-code.mcpServers.ogham-mcp = {
+            url = "https://ogham.example.com/sse";
+            type = "sse";
           };
         };
       }
@@ -171,13 +176,25 @@ assert builtins.hasAttr "profiles" s;
 assert s.machine == "mac-studio";
 assert s.user == "chuck";
 
-# MCP servers: two entries with correct structure
-assert builtins.length (builtins.attrNames s.mcpServers) == 2;
+# MCP servers: three entries with all transport types
+assert builtins.length (builtins.attrNames s.mcpServers) == 3;
+
+# stdio transport: command/args/env preserved
 assert builtins.hasAttr "linkding-biz" s.mcpServers;
-assert builtins.hasAttr "subcog-personal" s.mcpServers;
 assert s.mcpServers.linkding-biz.command == "/nix/store/mock/bin/linkding-biz";
 assert s.mcpServers.linkding-biz.args == [ "mcp" ];
 assert s.mcpServers.linkding-biz.env.LINKDING_BASE_URL == "https://links.biz.example.com";
+
+# HTTP transport: url/type/tokenFile preserved
+assert builtins.hasAttr "subcog-personal" s.mcpServers;
+assert s.mcpServers.subcog-personal.url == "https://subcog.example.com/mcp";
+assert s.mcpServers.subcog-personal.type == "http";
+assert s.mcpServers.subcog-personal.tokenFile == "/run/secrets/subcog-token";
+
+# SSE transport: url/type preserved
+assert builtins.hasAttr "ogham-mcp" s.mcpServers;
+assert s.mcpServers.ogham-mcp.url == "https://ogham.example.com/sse";
+assert s.mcpServers.ogham-mcp.type == "sse";
 
 # Skills: source names extracted
 assert builtins.isList s.skills;
@@ -217,4 +234,4 @@ assert emptyS.profiles == { };
 assert builtins.isString (builtins.toJSON s);
 assert builtins.isString (builtins.toJSON emptyS);
 
-"PASS: serialization — smoke test, null-user, empty-modules, JSON roundtrip"
+"PASS: serialization — smoke (stdio+HTTP+SSE), null-user, empty-modules, JSON roundtrip"

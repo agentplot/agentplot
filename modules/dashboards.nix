@@ -22,7 +22,8 @@ in
 
     domain = lib.mkOption {
       type = lib.types.str;
-      description = "FQDN for the Caddy virtual host (e.g., dashboards.swancloud.net)";
+      example = "dashboards.swancloud.net";
+      description = "FQDN for the Caddy virtual host";
     };
 
     sites = lib.mkOption {

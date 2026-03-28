@@ -77,12 +77,6 @@ in
             hmCfg = config.home-manager.users.${cfg.user};
             ccCfg = hmCfg.programs.claude-code;
 
-            # Extract command/args/env from MCP server submodules, dropping module metadata
-            serializeMcpServer = _name: srv: {
-              inherit (srv) command args;
-              env = srv.env or { };
-            };
-
             serializeProfile = _name: prof: {
               mcpServers = builtins.attrNames prof.mcpServers;
             };
@@ -90,10 +84,13 @@ in
           {
             machine = config.networking.hostName;
             user = cfg.user;
-            mcpServers = lib.mapAttrs serializeMcpServer ccCfg.mcpServers;
+            # mcpServers uses jsonFormat.type (freeform JSON) — pass through all fields
+            # to capture all transport types: stdio (command/args/env), HTTP (url/type/tokenFile),
+            # SSE (url/type)
+            mcpServers = ccCfg.mcpServers;
             skills = builtins.attrNames hmCfg.programs.agent-skills.sources;
             cliTools = cfg._contributedCliTools;
-            agentDeckMcps = lib.mapAttrs serializeMcpServer hmCfg.programs.agent-deck.mcps;
+            agentDeckMcps = hmCfg.programs.agent-deck.mcps;
             profiles = lib.mapAttrs serializeProfile ccCfg.profiles;
           };
     })
