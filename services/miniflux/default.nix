@@ -134,10 +134,7 @@
 
             networking.firewall.allowedTCPPorts = [ 443 ];
 
-            clan.core.state.miniflux.folders = [ "/persist/miniflux" ];
-
             systemd.tmpfiles.rules = [
-              "d /persist/miniflux 0750 miniflux miniflux"
               "d /persist/caddy 0700 caddy caddy"
             ];
           };
