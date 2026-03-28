@@ -23,13 +23,13 @@
 
 ## 5. Client DB access and MCP JWT auth (blocked on agentplot-kit#3)
 
-- [ ] 5.1 Add shared secret mode to mkClientTooling in agentplot-kit (agentplot-kit#3)
-- [ ] 5.2 Wire `SUBCOG_STORAGE_CONNECTION_STRING` in CLI envVars using shared DB password
-- [ ] 5.3 Wire MCP `tokenFile` using shared JWT token from `subcog-jwt-token` generator
+- [x] 5.1 Add shared secret mode to mkClientTooling in agentplot-kit (agentplot-kit#3)
+- [x] 5.2 Wire `SUBCOG_STORAGE_CONNECTION_STRING` in CLI envVars using shared DB password
+- [x] 5.3 Wire MCP `tokenFile` using shared JWT token from `subcog-jwt-token` generator
 
 ## 6. Spec updates
 
-- [ ] 6.1 Sync delta specs to main specs via `openspec sync`
+- [x] 6.1 Sync delta specs to main specs via `openspec sync`
 
 ## 7. Verification
 
