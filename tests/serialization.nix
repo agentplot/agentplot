@@ -102,11 +102,13 @@ let
           };
         };
         config.agentplot.hmModules.subcog-personal = { ... }: {
-          # HTTP transport: url/type/tokenFile
+          # HTTP transport: url/type/headers (headers is Claude Code's auth mechanism)
           programs.claude-code.mcpServers.subcog-personal = {
             url = "https://subcog.example.com/mcp";
             type = "http";
-            tokenFile = "/run/secrets/subcog-token";
+            headers = {
+              Authorization = "Bearer \${SUBCOG_API_TOKEN}";
+            };
           };
           programs.claude-code.profiles.business.mcpServers.linkding-biz = {
             command = "/nix/store/mock/bin/linkding-biz";
@@ -185,11 +187,11 @@ assert s.mcpServers.linkding-biz.command == "/nix/store/mock/bin/linkding-biz";
 assert s.mcpServers.linkding-biz.args == [ "mcp" ];
 assert s.mcpServers.linkding-biz.env.LINKDING_BASE_URL == "https://links.biz.example.com";
 
-# HTTP transport: url/type/tokenFile preserved
+# HTTP transport: url/type/headers preserved
 assert builtins.hasAttr "subcog-personal" s.mcpServers;
 assert s.mcpServers.subcog-personal.url == "https://subcog.example.com/mcp";
 assert s.mcpServers.subcog-personal.type == "http";
-assert s.mcpServers.subcog-personal.tokenFile == "/run/secrets/subcog-token";
+assert s.mcpServers.subcog-personal.headers.Authorization == "Bearer \${SUBCOG_API_TOKEN}";
 
 # SSE transport: url/type preserved
 assert builtins.hasAttr "ogham-mcp" s.mcpServers;
