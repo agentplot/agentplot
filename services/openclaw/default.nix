@@ -493,6 +493,11 @@
       let
         serverName = builtins.head (builtins.attrNames (roles.server.machines or { }));
         serverSettings = roles.server.machines.${serverName}.settings;
+        # Placeholder that gets replaced at activation with the real token.
+        # nix-openclaw expects gateway.remote.token to be a literal string,
+        # but clan vars secrets only exist at runtime, not nix eval time.
+        tokenPlaceholder = "__OPENCLAW_GATEWAY_TOKEN_PLACEHOLDER__";
+
         openclawHmConfig = config: {
           programs.openclaw = {
             enable = true;
@@ -507,11 +512,28 @@
                 gateway.remote = {
                   url = "wss://${serverSettings.domain}";
                   transport = "direct";
-                  token = config.clan.core.vars.generators.openclaw-gateway-token.files.token.path;
+                  token = tokenPlaceholder;
                 };
               };
             };
           };
+        };
+
+        # Activation script that replaces the token placeholder in openclaw.json
+        # with the actual secret value. Runs after openclawConfigFiles which
+        # symlinks the nix-store config into place.
+        tokenActivation = { config, pkgs, lib, configPath }: {
+          home.activation.openclawInjectToken = lib.hm.dag.entryAfter [ "openclawConfigFiles" ] ''
+            _tokenFile="${config.clan.core.vars.generators.openclaw-gateway-token.files.token.path}"
+            _configFile="${configPath}"
+            if [ -f "$_tokenFile" ] && [ -e "$_configFile" ]; then
+              _token="$(${lib.getExe' pkgs.coreutils "cat"} "$_tokenFile")"
+              _tmpConfig="$(${lib.getExe' pkgs.coreutils "mktemp"}")"
+              ${lib.getExe' pkgs.gnused "sed"} "s|${tokenPlaceholder}|$_token|g" "$_configFile" > "$_tmpConfig"
+              ${lib.getExe' pkgs.coreutils "rm"} -f "$_configFile"
+              ${lib.getExe' pkgs.coreutils "mv"} "$_tmpConfig" "$_configFile"
+            fi
+          '';
         };
       in
       {
@@ -526,7 +548,8 @@
                 openssl rand -hex 32 > $out/token
               '';
             };
-            home-manager.users.openclaw = openclawHmConfig config;
+            home-manager.users.openclaw = lib.recursiveUpdate (openclawHmConfig config)
+              (tokenActivation { inherit config pkgs lib; configPath = "/home/openclaw/.openclaw/openclaw.json"; });
           };
 
         darwinModule =
@@ -544,7 +567,8 @@
                 openssl rand -hex 32 > $out/token
               '';
             };
-            home-manager.users.chuck = openclawHmConfig config;
+            home-manager.users.chuck = lib.recursiveUpdate (openclawHmConfig config)
+              (tokenActivation { inherit config pkgs lib; configPath = "$HOME/.openclaw/openclaw.json"; });
           };
       };
   };
