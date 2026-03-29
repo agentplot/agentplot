@@ -77,6 +77,15 @@ in
             hmCfg = config.home-manager.users.${cfg.user};
             ccCfg = hmCfg.programs.claude-code;
 
+            # Strip Nix store path context from serialized values so that
+            # builtins.toJSON doesn't create cross-platform build dependencies.
+            # MCP command fields like "${pkgs.foo}/bin/foo" become plain strings.
+            stripContext = v:
+              if builtins.isString v then builtins.unsafeDiscardStringContext v
+              else if builtins.isAttrs v then lib.mapAttrs (_: stripContext) v
+              else if builtins.isList v then map stripContext v
+              else v;
+
             serializeProfile = _name: prof: {
               mcpServers = builtins.attrNames prof.mcpServers;
             };
@@ -84,13 +93,10 @@ in
           {
             machine = config.networking.hostName;
             user = cfg.user;
-            # mcpServers uses jsonFormat.type (freeform JSON) — pass through all fields
-            # to capture all transport types: stdio (command/args/env), HTTP (url/type/tokenFile),
-            # SSE (url/type)
-            mcpServers = ccCfg.mcpServers;
+            mcpServers = stripContext ccCfg.mcpServers;
             skills = builtins.attrNames hmCfg.programs.agent-skills.sources;
             cliTools = cfg._contributedCliTools;
-            agentDeckMcps = hmCfg.programs.agent-deck.mcps;
+            agentDeckMcps = stripContext hmCfg.programs.agent-deck.mcps;
             profiles = lib.mapAttrs serializeProfile ccCfg.profiles;
           };
     })
