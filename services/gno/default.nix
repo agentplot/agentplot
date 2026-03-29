@@ -78,7 +78,13 @@
               after = [ "network.target" ];
               wantedBy = [ "multi-user.target" ];
 
-              environment.GNO_CONFIG = toString gnoConfigFile;
+              environment = {
+                GNO_CONFIG = toString gnoConfigFile;
+                # node-llama-cpp: force CPU backend — prebuilt Vulkan/CUDA
+                # binaries aren't compatible with NixOS and local builds
+                # fail against the read-only nix store.
+                NODE_LLAMA_CPP_GPU = "false";
+              };
 
               serviceConfig = {
                 ExecStartPre = "${pkgs.bash}/bin/bash -c 'test -f /persist/gno/.config/gno/index.yml || (HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'";
