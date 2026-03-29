@@ -63,21 +63,22 @@
             port = settings.port;
             tlsConfig = config.caddy-cloudflare.tls;
 
-            # Script: init if needed, then ensure declared collections are present
-            initScript = pkgs.writeShellScript "gno-init" ''
-              CONFIG="/persist/gno/.config/gno/index.yml"
-              if [ ! -f "$CONFIG" ]; then
-                HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes
-              fi
-              ${lib.optionalString (settings.collections != { }) ''
-                # Add declared collections via CLI (idempotent — skips existing names)
-                ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: col: ''
-                  if ! HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection list --json 2>/dev/null | ${pkgs.jq}/bin/jq -e '.[] | select(.name == "${name}")' >/dev/null 2>&1; then
-                    HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection add "${col.path}" --name "${name}" --pattern "${col.pattern}" --yes
-                  fi
-                '') settings.collections)}
-              ''}
-            '';
+            # Declarative gno config — Nix owns this file
+            collectionsYaml = lib.concatMapStringsSep "\n" (name:
+              let col = settings.collections.${name}; in
+              "  - name: \"${name}\"\n    path: \"${col.path}\"\n    pattern: \"${col.pattern}\""
+            ) (builtins.attrNames settings.collections);
+
+            gnoConfig = pkgs.writeText "index.yml" (lib.concatStringsSep "\n" ([
+              "version: \"1.0\""
+              "ftsTokenizer: snowball english"
+            ] ++ (if settings.collections == { }
+              then [ "collections: []" ]
+              else [ "collections:" collectionsYaml ])
+            ++ [
+              "contexts: []"
+              ""
+            ]));
           in
           {
             systemd.services.gno = {
@@ -93,7 +94,7 @@
               };
 
               serviceConfig = {
-                ExecStartPre = toString initScript;
+                ExecStartPre = "${pkgs.coreutils}/bin/install -m 644 -o gno -g gno ${gnoConfig} /persist/gno/.config/gno/index.yml";
                 ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
@@ -127,6 +128,7 @@
 
             systemd.tmpfiles.rules = [
               "d /persist/gno 0750 gno gno"
+              "d /persist/gno/.config/gno 0750 gno gno"
               "Z /persist/gno 0750 gno gno"
               "d /persist/caddy 0700 caddy caddy"
             ];
