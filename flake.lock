@@ -28,11 +28,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774052104,
-        "narHash": "sha256-jTBJbGuNFjQhJl1dFIozWC33tmCXUAAlsqfqdQsRVEQ=",
+        "lastModified": 1774813442,
+        "narHash": "sha256-jGjxb7Py61RuKWnMZXvxKtPC6NI0moe7Z1WmVAZiUwk=",
         "owner": "agentplot",
         "repo": "agentplot-kit",
-        "rev": "a8826e4bfeaa2f69a7748b32cfe477c22e625219",
+        "rev": "c4ad4f6ec4aee18af62218e677511b1461953c01",
         "type": "github"
       },
       "original": {
