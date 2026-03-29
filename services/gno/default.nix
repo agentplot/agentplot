@@ -63,14 +63,21 @@
             port = settings.port;
             tlsConfig = config.caddy-cloudflare.tls;
 
-            # Generate a JSON config for gno — paths reference host filesystem directly
-            gnoConfigFile = pkgs.writeText "gno-config.json" (builtins.toJSON {
-              inherit port;
-              dataDir = "/persist/gno";
-              collections = lib.mapAttrs (_name: col: {
-                inherit (col) path pattern;
-              }) settings.collections;
-            });
+            # Script: init if needed, then ensure declared collections are present
+            initScript = pkgs.writeShellScript "gno-init" ''
+              CONFIG="/persist/gno/.config/gno/index.yml"
+              if [ ! -f "$CONFIG" ]; then
+                HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes
+              fi
+              ${lib.optionalString (settings.collections != { }) ''
+                # Add declared collections via CLI (idempotent — skips existing names)
+                ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: col: ''
+                  if ! HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection list --json 2>/dev/null | ${pkgs.jq}/bin/jq -e '.[] | select(.name == "${name}")' >/dev/null 2>&1; then
+                    HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection add "${name}" "${col.path}" --pattern "${col.pattern}" --yes
+                  fi
+                '') settings.collections)}
+              ''}
+            '';
           in
           {
             systemd.services.gno = {
@@ -79,7 +86,6 @@
               wantedBy = [ "multi-user.target" ];
 
               environment = {
-                GNO_CONFIG = toString gnoConfigFile;
                 # node-llama-cpp: force CPU backend — prebuilt Vulkan/CUDA
                 # binaries aren't compatible with NixOS and local builds
                 # fail against the read-only nix store.
@@ -87,7 +93,7 @@
               };
 
               serviceConfig = {
-                ExecStartPre = "${pkgs.bash}/bin/bash -c 'test -f /persist/gno/.config/gno/index.yml || (HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno init --yes)'";
+                ExecStartPre = toString initScript;
                 ExecStart = "${pkgs.llm-agents.gno}/bin/gno serve --port ${toString port}";
                 Restart = "on-failure";
                 RestartSec = 10;
