@@ -73,7 +73,7 @@
                 # Add declared collections via CLI (idempotent — skips existing names)
                 ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: col: ''
                   if ! HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection list --json 2>/dev/null | ${pkgs.jq}/bin/jq -e '.[] | select(.name == "${name}")' >/dev/null 2>&1; then
-                    HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection add "${name}" "${col.path}" --pattern "${col.pattern}" --yes
+                    HOME=/persist/gno ${pkgs.llm-agents.gno}/bin/gno collection add "${col.path}" --name "${name}" --pattern "${col.pattern}" --yes
                   fi
                 '') settings.collections)}
               ''}
