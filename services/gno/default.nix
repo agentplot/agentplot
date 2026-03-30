@@ -114,6 +114,10 @@
                   reverse_proxy http://localhost:${toString port} {
                     header_up Origin http://localhost:${toString port}
                     header_up Sec-Fetch-Site same-origin
+                    transport http {
+                      read_timeout 300s
+                      write_timeout 300s
+                    }
                   }
                 '';
               };
