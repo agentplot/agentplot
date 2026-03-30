@@ -111,7 +111,10 @@
               virtualHosts."${settings.domain}" = {
                 extraConfig = ''
                   ${tlsConfig}
-                  reverse_proxy http://localhost:${toString port}
+                  reverse_proxy http://localhost:${toString port} {
+                    header_up Origin http://localhost:${toString port}
+                    header_up Sec-Fetch-Site same-origin
+                  }
                 '';
               };
             };
