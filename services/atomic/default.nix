@@ -90,7 +90,10 @@
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-              path = [ pkgs.curl ];
+              path = [
+                pkgs.curl
+                config.virtualisation.podman.package
+              ];
               script = ''
                 # Wait for Atomic server to be healthy
                 for i in $(seq 1 60); do
@@ -100,12 +103,14 @@
                   sleep 2
                 done
 
+                if ! curl -sf http://localhost:${port}/health > /dev/null 2>&1; then
+                  echo "Atomic server failed to become healthy after 120s" >&2
+                  exit 1
+                fi
+
                 TOKEN=$(cat ${tokenPath})
-                # Create admin token (idempotent — exits 0 if already exists)
-                curl -sf -X POST \
-                  -H "Content-Type: application/json" \
-                  -d "{\"name\": \"admin\", \"token\": \"$TOKEN\"}" \
-                  http://localhost:${port}/token/create || true
+                # Create admin token via CLI inside the container (idempotent)
+                podman exec atomic atomic-server token create --name admin --token "$TOKEN" || true
               '';
             };
 
