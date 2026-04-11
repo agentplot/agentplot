@@ -4,7 +4,18 @@ Terminal email client with multi-account IMAP/SMTP support and secretspec-based 
 
 **Upstream:** [pimalaya/himalaya](https://github.com/pimalaya/himalaya)
 
+## Benefits
+
+- Multi-account email management from a single terminal interface
+- Agent-driven inbox triage, search, compose, and reply workflows
+- IMAP/SMTP connectivity with secretspec-based authentication
+- No server deployment needed -- connects directly to external mail providers
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| client | Agent tooling and CLI wrappers for multi-account email via IMAP/SMTP |
 
 ### Client (client-only)
 

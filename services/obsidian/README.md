@@ -4,7 +4,18 @@ Knowledge management with vault-aware agent skills for note search, creation, li
 
 **Upstream:** [obsidianmd/obsidian](https://obsidian.md)
 
+## Benefits
+
+- Knowledge management with agent-aware tooling for note search, creation, and linking
+- Vault-aware skills supporting PARA-based organization
+- Flexible CLI integration when obsidian-cli is available
+- No server deployment needed -- operates directly on local vault storage
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| client | Vault-aware agent skills and optional CLI for Obsidian knowledge management |
 
 ### Client (client-only)
 

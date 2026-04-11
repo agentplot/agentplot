@@ -4,7 +4,17 @@ Agent skill for exporting and working with Tana knowledge base content. Covers w
 
 **Upstream:** [tana.inc](https://tana.inc)
 
+## Benefits
+
+- Knowledge management with agent skills for Tana workspace export and queries
+- Lightweight skill-only integration with no CLI or server overhead
+- No server deployment needed -- skills operate against Tana's own platform
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| client | Agent skills for Tana workspace export, supertag queries, and format conversion |
 
 ### Client (client-only)
 
