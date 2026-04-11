@@ -4,7 +4,19 @@ Bookmark manager with full REST API, tag-based organization, bundles (saved sear
 
 **Upstream:** [sissbruecker/linkding](https://github.com/sissbruecker/linkding)
 
+## Benefits
+
+- **Agent-accessible bookmark management** — agents can save, search, and retrieve bookmarks through CLI wrappers and skills
+- **Tag-based organization** — hierarchical tags and saved searches (bundles) keep bookmarks structured and discoverable
+- **Full REST API for automation** — every operation is available via the REST API, enabling workflow integration beyond agent tooling
+- **OIDC SSO support** — optional Kanidm authentication eliminates separate credentials
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| server | Deploys linkding OCI container with PostgreSQL and Caddy reverse proxy |
+| client | Agent tooling: CLI wrappers, skills, and API token management |
 
 ### Server
 
