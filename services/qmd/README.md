@@ -4,7 +4,19 @@ Document search engine with SOTA hybrid retrieval combining dense vectors, spars
 
 **Upstream:** [tobi/qmd](https://github.com/tobi/qmd)
 
+## Benefits
+
+- Advanced document retrieval with cross-encoder reranking for higher-precision search results
+- Hybrid search combining dense vectors, sparse BM25, and query expansion for comprehensive recall
+- MCP integration gives agents direct access to document search and retrieval over HTTP Streamable transport
+- Named collections with configurable glob patterns and exclusion rules for precise indexing control
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| **server** | Systemd service with Caddy reverse proxy, named document collections with exclusion rules |
+| **client** | Agent tooling via `mkClientTooling` (CLI, MCP endpoint, HM delegation) |
 
 ### Server
 
