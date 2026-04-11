@@ -2,7 +2,18 @@
 
 Persistent agent memory with hybrid search (vector + keyword + graph), entity-centric knowledge graph, and namespace-scoped retention policies. Built in Rust.
 
+## Benefits
+
+- Persistent agent memory across sessions with hybrid search (vector + keyword + graph)
+- Entity-centric knowledge graph with namespace scoping for organized retention
+- Multi-client memory isolation via per-instance namespace and JWT authentication
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| Server | subcog binary as systemd service with PostgreSQL/pgvector and Caddy reverse proxy |
+| Client | Agent tooling via `mkClientTooling` (skill, MCP endpoint, JWT secret, CLI wrapper) |
 
 ### Server
 

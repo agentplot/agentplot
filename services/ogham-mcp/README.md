@@ -4,7 +4,19 @@ Persistent agent memory server with hybrid search (semantic + full-text), knowle
 
 **Upstream:** ogham-mcp (PyPI, via `uvx`)
 
+## Benefits
+
+- Semantic memory with hybrid search combining vector embeddings and full-text retrieval
+- Knowledge graph with cognitive decay and progressive compression for natural memory aging
+- MCP-native memory interface accessible from any MCP-compatible agent
+- Multi-provider embedding support (OpenAI, Ollama, Mistral, Voyage)
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| Server | ogham-mcp as systemd service with PostgreSQL/pgvector and Caddy reverse proxy |
+| Client | Agent tooling via `mkClientTooling` (skill, MCP SSE endpoint, API key) |
 
 ### Server
 
