@@ -4,7 +4,19 @@ MicroVM infrastructure for running Clan machines as lightweight virtual machine 
 
 **Upstream:** [astro/microvm.nix](https://github.com/astro/microvm.nix)
 
+## Benefits
+
+- Lightweight VM isolation for services without the overhead of full virtual machines
+- Deterministic network identifiers (MAC addresses, vsock CIDs, machine IDs) derived from hostname, eliminating manual ID management
+- Automatic persistent storage directories and journal forwarding from guests to host
+- Virtiofs for efficient host-guest sharing of the nix store, secrets, and state
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| host | Configures NixOS to run MicroVM guests with networking and storage |
+| guest | Configures a NixOS system to run inside a MicroVM |
 
 ### Host
 
