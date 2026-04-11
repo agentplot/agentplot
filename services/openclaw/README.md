@@ -4,7 +4,20 @@ AI assistant gateway with multi-channel support (Telegram, Discord, iMessage via
 
 **Upstream:** [openclaw/nix-openclaw](https://github.com/openclaw/nix-openclaw)
 
+## Benefits
+
+- **Multi-channel AI assistant gateway** — single deployment handles Telegram, Discord, and iMessage (via BlueBubbles) from one unified service
+- **Agent routing and workspace management** — define multiple agents with distinct models and thinking levels, bind them to channels, and orchestrate workflows through a full CLI ecosystem
+- **Extensible plugin system** — both server and node roles support custom and bundled plugins for tailored functionality
+- **Declarative multi-host topology** — server, node, and client roles compose cleanly across VMs and workstations via clan inventory
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| server | Gateway service with multi-channel support and agent routing |
+| node | Connects to remote gateway with local plugin support |
+| client | Agent tooling: workspace management skills and CLI packages |
 
 ### Server
 
