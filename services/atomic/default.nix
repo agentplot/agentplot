@@ -1,4 +1,4 @@
-{ ... }:
+{ mkClientTooling, ... }:
 {
   _class = "clan.service";
   manifest.name = "atomic";
@@ -146,4 +146,40 @@
           };
       };
   };
+
+  # ── Client Role ──────────────────────────────────────────────────────────────
+
+  roles.client =
+    let
+      tooling = mkClientTooling {
+        serviceName = "atomic";
+        capabilities = {
+          secret = [
+            {
+              name = "admin-token";
+              mode = "shared";
+              generator = "atomic-admin-token";
+              file = "token";
+            }
+          ];
+          mcp = {
+            type = "http";
+            urlTemplate = client: "https://${client.domain}/mcp";
+            extraConfig = client: {
+              tokenFile = client.secretPaths."admin-token";
+            };
+          };
+        };
+        extraClientOptions = { lib, ... }: {
+          domain = lib.mkOption {
+            type = lib.types.str;
+            description = "FQDN of the Atomic server (e.g., atomic.swancloud.net)";
+          };
+        };
+      };
+    in
+    {
+      description = "Atomic agent tooling (MCP endpoint config, HM delegation)";
+      inherit (tooling) interface perInstance;
+    };
 }
