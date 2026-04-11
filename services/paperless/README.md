@@ -4,7 +4,19 @@ Document management system with OCR, full-text search, mail rule automation, and
 
 **Upstream:** [paperless-ngx](https://github.com/paperless-ngx/paperless-ngx)
 
+## Benefits
+
+- **OCR-powered document management** — automatic text recognition, full-text search, and tag-based organization for all ingested documents
+- **Agent-driven document search and filing** — REST API skills let coding agents query, tag, and file documents without manual intervention
+- **OIDC single sign-on** — optional Kanidm integration for unified authentication across services
+- **Evernote migration support** — bundled enex2paperless converter for migrating existing Evernote notebooks into Paperless
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| server | NixOS paperless-ngx service with PostgreSQL, Caddy, and OIDC |
+| client | Agent tooling: CLI wrappers, skills, and API token management |
 
 ### Server
 

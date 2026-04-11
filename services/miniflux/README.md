@@ -4,7 +4,19 @@ Minimalist RSS reader with a clean reading experience, full REST API, and feed m
 
 **Upstream:** [miniflux/v2](https://github.com/miniflux/v2)
 
+## Benefits
+
+- Lightweight, self-hosted RSS reader with a clean reading experience and minimal resource footprint
+- Full REST API enables agent-driven feed monitoring, search, and content extraction
+- Optional OIDC SSO via Kanidm for unified authentication across services
+- CLI wrappers and agent skills provide programmatic feed management without browser interaction
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| server | Native NixOS miniflux service with PostgreSQL and Caddy |
+| client | Agent tooling: CLI wrappers, skills, and API token management |
 
 ### Server
 
