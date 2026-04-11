@@ -4,7 +4,19 @@ Document search engine with hybrid RAG, wiki-link graph traversal, and MCP tooli
 
 **Upstream:** [nicepkg/gno](https://github.com/nicepkg/gno)
 
+## Benefits
+
+- Hybrid RAG with wiki-link graph traversal for context-aware document retrieval that follows relationships between documents
+- Semantic document search across named collections with configurable glob patterns
+- MCP integration gives agents direct access to structured document search and retrieval
+- CLI and skill support for interactive and automated workflows alongside MCP tooling
+
 ## Roles
+
+| Role | Description |
+|------|-------------|
+| **server** | OCI container with Caddy reverse proxy, named document collections |
+| **client** | Agent tooling via `mkClientTooling` (CLI, skills, MCP endpoint, HM delegation) |
 
 ### Server
 
