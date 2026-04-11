@@ -43,7 +43,7 @@
       inherit (agentplot-kit.lib) mkClientTooling;
     in
     {
-      clan.modules.atomic = import ./services/atomic { };
+      clan.modules.atomic = import ./services/atomic { inherit mkClientTooling; };
       clan.modules.linkding = import ./services/linkding { inherit mkClientTooling; };
       clan.modules.microvm = ./services/microvm;
       clan.modules.gno = import ./services/gno { inherit mkClientTooling; };
