@@ -69,6 +69,7 @@
                   "/persist/atomic:/persist/atomic"
                 ];
                 cmd = [
+                  "serve"
                   "--data-dir" "/persist/atomic"
                   "--bind" "127.0.0.1"
                   "--port" port
