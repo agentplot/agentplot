@@ -141,7 +141,7 @@
             # ── Tmpfiles ─────────────────────────────────────────────────────
 
             systemd.tmpfiles.rules = [
-              "d /persist/atomic 0750 root root"
+              "d /persist/atomic 0750 999 999"
               "d /persist/caddy 0700 caddy caddy"
             ];
           };
