@@ -49,11 +49,10 @@ in
       }:
       {
         nixosModule =
-          { self, ... }:
+          { self, pkgs, ... }:
           let
-            guestNames = lib.attrNames (
-              lib.filterAttrs (_: cfg: cfg.settings.host == machine.name) (roles.guest.machines or { })
-            );
+            guests = lib.filterAttrs (_: cfg: cfg.settings.host == machine.name) (roles.guest.machines or { });
+            guestNames = lib.attrNames guests;
           in
           {
             imports = [ self.inputs.microvm.nixosModules.host ];
@@ -81,6 +80,33 @@ in
               ) guestNames
             );
 
+            systemd.services = lib.mkMerge (
+              lib.mapAttrsToList (
+                name: cfg:
+                let
+                  persistDir = persistDirFor name;
+                in
+                lib.mkIf (cfg.settings.ageKeyFile != null) {
+                  "microvm-seed-age-${name}" = {
+                    description = "Pre-seed sops age key for microvm ${name}";
+                    wantedBy = [ "microvms.target" ];
+                    before = [ "microvm@${name}.service" ];
+                    unitConfig.ConditionPathExists = "!${persistDir}/sops-nix/key.txt";
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                      ExecStart = toString [
+                        "${pkgs.coreutils}/bin/install"
+                        "-m" "400"
+                        cfg.settings.ageKeyFile
+                        "${persistDir}/sops-nix/key.txt"
+                      ];
+                    };
+                  };
+                }
+              ) guests
+            );
+
             clan.core.state.microvm.folders = [ "/data/microvm" ];
           };
       };
@@ -96,6 +122,11 @@ in
           host = lib.mkOption {
             type = lib.types.str;
             description = "Inventory machine name of the host that runs this guest";
+          };
+          ageKeyFile = lib.mkOption {
+            type = lib.types.nullOr lib.types.path;
+            default = null;
+            description = "Host-side path to the decrypted age key for this guest. Copied to persistent storage before first boot.";
           };
         };
       };
@@ -163,7 +194,7 @@ in
                 }
                 {
                   source = "${persistDir}/ssh";
-                  mountPoint = "/etc/ssh";
+                  mountPoint = "/persist/ssh-host-keys";
                   tag = "ssh";
                   proto = "virtiofs";
                   socket = "${baseDir}/ssh.socket";
@@ -195,6 +226,11 @@ in
             fileSystems = lib.genAttrs
               (map (share: share.mountPoint) config.microvm.shares)
               (_: { neededForBoot = true; });
+
+            services.openssh.hostKeys = [
+              { path = "/persist/ssh-host-keys/ssh_host_ed25519_key"; type = "ed25519"; }
+              { path = "/persist/ssh-host-keys/ssh_host_rsa_key"; type = "rsa"; bits = 4096; }
+            ];
 
             networking.useNetworkd = true;
             networking.useDHCP = false;

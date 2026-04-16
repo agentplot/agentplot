@@ -166,6 +166,8 @@ Gno/qmd demonstrate declarative config generation — Nix writes a YAML/JSON con
 ### Microvm guests
 - All guests need `networking.hostId = lib.mkForce "<unique-8-hex>"` to resolve microvm vs clan-core ZFS conflict
 - Guests using llm-agents packages need `nixpkgs.overlays = [ inputs.llm-agents.overlays.default ]`
+- SSH host keys persist at `/persist/ssh-host-keys/` (virtiofs), NOT `/etc/ssh/` — `services.openssh.hostKeys` set by module
+- Age key pre-seeding: set `ageKeyFile` in guest settings to host-side sops-decrypted path; oneshot copies to `${persistDir}/sops-nix/key.txt` on first boot
 
 ### State
 - `config ? services.borgbackup` is always true (NixOS declares the option) — not a valid guard for conditional borgbackup config
