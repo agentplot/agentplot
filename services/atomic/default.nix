@@ -71,7 +71,7 @@
                 cmd = [
                   "serve"
                   "--data-dir" "/persist/atomic"
-                  "--bind" "127.0.0.1"
+                  "--bind" "0.0.0.0"
                   "--port" port
                 ];
                 environment = {
