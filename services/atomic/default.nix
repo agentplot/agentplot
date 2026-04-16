@@ -63,16 +63,10 @@
             virtualisation.oci-containers = {
               backend = "podman";
               containers.atomic = {
-                image = "ghcr.io/kenforthewin/atomic-server:latest";
-                ports = [ "${port}:${port}" ];
+                image = "ghcr.io/kenforthewin/atomic:latest";
+                ports = [ "${port}:8081" ];
                 volumes = [
-                  "/persist/atomic:/persist/atomic"
-                ];
-                cmd = [
-                  "serve"
-                  "--data-dir" "/persist/atomic"
-                  "--bind" "0.0.0.0"
-                  "--port" port
+                  "/persist/atomic:/data"
                 ];
                 environment = {
                   PUBLIC_URL = "https://${settings.domain}";
@@ -109,9 +103,11 @@
                   exit 1
                 fi
 
-                TOKEN=$(cat ${tokenPath})
-                # Create admin token via CLI inside the container (idempotent)
-                podman exec atomic atomic-server token create --name admin --token "$TOKEN" || true
+                # Create admin token via CLI inside container; capture output and persist
+                EXISTING=$(podman exec atomic atomic-server token list --data-dir /data 2>/dev/null | grep -c "admin" || true)
+                if [ "$EXISTING" = "0" ]; then
+                  podman exec atomic atomic-server token create --name admin --data-dir /data 2>&1 | tee /persist/atomic/admin-token.txt
+                fi
               '';
             };
 
@@ -141,7 +137,7 @@
             # ── Tmpfiles ─────────────────────────────────────────────────────
 
             systemd.tmpfiles.rules = [
-              "d /persist/atomic 0750 999 999"
+              "d /persist/atomic 0750 root root"
               "d /persist/caddy 0700 caddy caddy"
             ];
           };
