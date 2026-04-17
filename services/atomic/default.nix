@@ -175,9 +175,8 @@
         let
           base = origPerInstance args;
           clientSettings = args.settings.clients or { };
-        in
-        base // {
-          hmModule = { config, lib, pkgs, ... }:
+
+          mcpOverlay = { config, lib, pkgs, ... }:
             let
               mkAtomicMcp = clientName: client:
                 let
@@ -191,15 +190,25 @@
                   '';
                 in
                 lib.mkIf (client.claude-code.mcp.enabled or false) {
-                  programs.claude-code.mcpServers."atomic" = {
-                    command = toString wrapper;
-                    args = [ ];
+                  agentplot.hmModules."atomic-${clientName}-mcp" = _: {
+                    programs.claude-code.mcpServers."atomic" = {
+                      command = toString wrapper;
+                      args = [ ];
+                    };
                   };
                 };
             in
-            lib.mkMerge ([
-              (base.hmModule { inherit config lib pkgs; })
-            ] ++ (lib.mapAttrsToList mkAtomicMcp clientSettings));
+            lib.mkMerge (lib.mapAttrsToList mkAtomicMcp clientSettings);
+
+          wrapModule = baseModule: { config, lib, pkgs, ... }:
+            lib.mkMerge [
+              (baseModule { inherit config lib pkgs; })
+              (mcpOverlay { inherit config lib pkgs; })
+            ];
+        in
+        {
+          nixosModule = wrapModule base.nixosModule;
+          darwinModule = wrapModule base.darwinModule;
         };
     in
     {
