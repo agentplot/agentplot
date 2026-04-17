@@ -154,29 +154,57 @@
           secret = [
             {
               name = "admin-token";
-              mode = "shared";
-              generator = "atomic-admin-token";
-              file = "token";
+              mode = "prompted";
             }
           ];
-          mcp = {
-            type = "http";
-            urlTemplate = client: "https://${client.domain}/mcp";
-            extraConfig = client: {
-              tokenFile = client.secretPaths."admin-token";
-            };
-          };
         };
         extraClientOptions = { lib, ... }: {
           domain = lib.mkOption {
             type = lib.types.str;
             description = "FQDN of the Atomic server (e.g., atomic.swancloud.net)";
           };
+          claude-code.mcp.enabled = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Wire Atomic MCP into Claude Code";
+          };
         };
       };
+
+      wrapPerInstance = origPerInstance: args:
+        let
+          base = origPerInstance args;
+          clientSettings = args.settings.clients or { };
+        in
+        base // {
+          hmModule = { config, lib, pkgs, ... }:
+            let
+              mkAtomicMcp = clientName: client:
+                let
+                  generatorName = "agentplot-atomic-${clientName}-admin-token";
+                  tokenPath = config.clan.core.vars.generators.${generatorName}.files."admin-token".path;
+                  wrapper = pkgs.writeShellScript "atomic-mcp" ''
+                    TOKEN=$(cat "${tokenPath}")
+                    exec ${pkgs.nodejs}/bin/npx -y mcp-remote \
+                      "https://${client.domain}/mcp" \
+                      --header "Authorization: Bearer $TOKEN"
+                  '';
+                in
+                lib.mkIf (client.claude-code.mcp.enabled or false) {
+                  programs.claude-code.mcpServers."atomic" = {
+                    command = toString wrapper;
+                    args = [ ];
+                  };
+                };
+            in
+            lib.mkMerge ([
+              (base.hmModule { inherit config lib pkgs; })
+            ] ++ (lib.mapAttrsToList mkAtomicMcp clientSettings));
+        };
     in
     {
       description = "Atomic agent tooling (MCP endpoint config, HM delegation)";
-      inherit (tooling) interface perInstance;
+      interface = tooling.interface;
+      perInstance = wrapPerInstance tooling.perInstance;
     };
 }
