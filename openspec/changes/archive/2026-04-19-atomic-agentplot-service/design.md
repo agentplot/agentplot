@@ -15,21 +15,21 @@ LLM provider configuration (OpenRouter, Ollama, etc.) is done through the web UI
 - Declare persistent state for borgbackup
 - Build directly in agentplot as a reusable clanService
 - Expose MCP server via Tailscale for Darwin client access
+- Provide a `client` role built on `mkClientTooling` that wires the Atomic MCP endpoint into Claude Code with a prompted bearer token
 
 **Non-Goals:**
 - OIDC integration (Atomic doesn't support external OIDC providers — bearer tokens only)
 - PostgreSQL backend (SQLite is sufficient for single-user; avoids dependency on host postgres)
 - LLM provider configuration at the Nix level (this is a web UI concern)
-- Client role / mkClientTooling (can be added later for CLI + skills)
 - Multi-instance support (single instance is sufficient)
 
 ## Decisions
 
 ### 1. All-in-one OCI image vs separate server + web images
 
-**Decision:** Use the all-in-one `ghcr.io/kenforthewin/atomic-server:latest` image.
+**Decision:** Use the all-in-one `ghcr.io/kenforthewin/atomic:latest` image (bundles server + web UI in one container).
 
-**Rationale:** The Docker Compose setup ships separate server and web containers with nginx in front. But Atomic also supports a single-binary mode (used in Fly.io deploys) where the server serves the frontend directly. The all-in-one approach is simpler — one container, one port, Caddy in front. No need for inter-container networking.
+**Rationale:** The Docker Compose setup ships separate server and web containers with nginx in front. But Atomic also publishes an all-in-one image where the server serves the frontend directly. One container, one port, Caddy in front. No inter-container networking. The container uses its built-in defaults for data dir (`/data`), bind address (`0.0.0.0` internally — safe because the port is published only to the microvm's localhost and fronted by Caddy), and listener port (8081) — we map the host port via `ports = [ "${settings.port}:8081" ]` rather than passing CLI args.
 
 **Alternative considered:** Two containers (server + web + nginx) — rejected as unnecessary complexity for a single-user deployment.
 
@@ -43,9 +43,9 @@ LLM provider configuration (OpenRouter, Ollama, etc.) is done through the web UI
 
 ### 3. Data directory and persistence
 
-**Decision:** Mount `/persist/atomic` as the data directory. Pass `--data-dir /persist/atomic` to the server.
+**Decision:** Bind-mount `/persist/atomic` → `/data` inside the container (the image's built-in data dir).
 
-**Rationale:** Single directory contains the SQLite database and all state. Maps cleanly to `clan.core.state.atomic.folders`. Follows the same `/persist/<service>` convention as paperless and linkding.
+**Rationale:** Single directory contains the SQLite database and all state. Maps cleanly to `clan.core.state.atomic.folders`. Follows the `/persist/<service>` convention as paperless and linkding. We bind-mount onto the image's default path rather than overriding `--data-dir`, so no CLI args are needed.
 
 ### 4. IP allocation
 
