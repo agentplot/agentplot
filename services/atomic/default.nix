@@ -184,9 +184,10 @@
                   tokenPath = config.clan.core.vars.generators.${generatorName}.files."admin-token".path;
                   wrapper = pkgs.writeShellScript "atomic-mcp" ''
                     TOKEN=$(cat "${tokenPath}")
-                    exec ${pkgs.nodejs}/bin/npx -y mcp-remote \
+                    exec ${pkgs.nodejs}/bin/npx -y mcp-remote@0.1.18 \
                       "https://${client.domain}/mcp" \
-                      --header "Authorization: Bearer $TOKEN"
+                      --transport http-only \
+                      --header "Authorization:Bearer $TOKEN"
                   '';
                 in
                 lib.mkIf (client.claude-code.mcp.enabled or false) {
