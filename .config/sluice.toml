@@ -1,0 +1,27 @@
+# sluice gates every merge into a bolt and onto main: `nix flake check`, the
+# repository's check (README), which evaluates the flake and its checks.
+# main and the bolts live on GitHub: every round fetches them from origin
+# and forms on what it holds, and a landing is a leased push as the host's
+# [forge] app. crew makes each bolt there with `sluice branch create`.
+[tests]
+runner = "command"
+command = "nix flake check"
+
+[branches."bolt/*"]
+required = ["nix flake check"]
+parallel = 4
+batch = false
+flaky = "fail"
+timeout = "15m"
+remote = "origin"
+
+[branches.main]
+required = ["nix flake check"]
+parallel = 2
+batch = false
+flaky = "fail"
+timeout = "15m"
+remote = "origin"
+
+[branches.main.pull_requests]
+reviews = 0
