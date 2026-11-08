@@ -64,7 +64,7 @@ It throws, naming the requirement and each guest concerned, in this order:
 2. any of the host's `microvm.vms` sets `flake` or `updateFlake`;
 3. the host's `microvm.vms` names are not exactly `[ "guest" ]` (a guest of this host is missing, or `elsewhere` is installed);
 4. for each of the host's guests, its `evaluatedConfig.config.system.build.toplevel.drvPath` is not the consumer's `nixosConfigurations.<guest>`'s;
-5. for each of the host's guests, its install script's context lacks the guest's toplevel `drvPath`;
+5. for each of the host's guests, its install script's context lacks the guest's toplevel `drvPath` or its `microvm.declaredRunner`'s;
 6. for each of the host's guests, the reader finds the source in its install script.
 
 Steps 4 to 6 iterate over the host's `microvm.vms`, so a guest added to the stubbed inventory later is covered without editing them.
