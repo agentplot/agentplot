@@ -7,7 +7,7 @@
 ## 2. Guests by their evaluated configuration
 
 - [x] 2.1 In `services/microvm/default.nix`, have the host role give each of its guests `{ evaluatedConfig = self.nixosConfigurations.${name}; autostart = true; }`, with no `flake` and no `updateFlake`, and verify the check now passes: `nix build --no-link ".#checks.$(nix config show system).microvm-host-holds-no-source"`
-- [ ] 2.2 Document how a host installs its guests, as design.md decision 4 describes: in `services/microvm/README.md`'s Host section (installed from each guest's evaluated configuration, its closure holding the guest's system and none of the flake's source, a guest moving with its host's deploy and not with `microvm -u`) and in the Microvm guests gotchas of `services/CLAUDE.md` (never `flake = self`, and why, naming the check). Verify both say it: `grep -n 'evaluated configuration' services/microvm/README.md services/CLAUDE.md && grep -n 'microvm-host-holds-no-source' services/CLAUDE.md`
+- [x] 2.2 Document how a host installs its guests, as design.md decision 4 describes: in `services/microvm/README.md`'s Host section (installed from each guest's evaluated configuration, its closure holding the guest's system and none of the flake's source, a guest moving with its host's deploy and not with `microvm -u`) and in the Microvm guests gotchas of `services/CLAUDE.md` (never `flake = self`, and why, naming the check). Verify both say it: `grep -n 'evaluated configuration' services/microvm/README.md services/CLAUDE.md && grep -n 'microvm-host-holds-no-source' services/CLAUDE.md`
 
 ## Workflow follow-up
 

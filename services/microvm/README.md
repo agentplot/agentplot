@@ -28,6 +28,8 @@ Configures the NixOS host to run MicroVM guests. Handles:
 - Deterministic machine IDs, MAC addresses, and vsock CIDs derived from hostname
 - TAP network interfaces with bridge connectivity
 
+The host installs each guest from its evaluated configuration, the consuming flake's `nixosConfigurations.<guest>`, and hands microvm.nix no `flake`. Its closure therefore holds each guest's runner and system and none of the flake's source, so a landing that changes none of a host's guests, nor the host itself, leaves the host's system unchanged. The host writes no `flake` file into `/var/lib/microvms/<guest>/`: a guest moves with its host's deploy, not with `microvm -u <guest>`.
+
 ### Guest
 
 Configures a NixOS system to run inside a MicroVM via cloud-hypervisor. Provides:
