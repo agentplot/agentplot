@@ -132,6 +132,7 @@ Run Clan machines as MicroVM guests using cloud-hypervisor.
 | `nixosModules.agentplot` | HM delegation adapter (NixOS) |
 | `darwinModules.agentplot` | HM delegation adapter (nix-darwin) |
 | `packages.<system>.linkding-cli` | Standalone linkding CLI |
+| `checks.<system>.microvm-host-holds-no-source` | Fails when the microvm host role installs a guest from a flake or its install unit refers to the flake's source |
 
 ## Development
 
@@ -141,6 +142,9 @@ nix build .#linkding-cli
 
 # Check the flake
 nix flake check
+
+# Run the microvm host's no-source check alone
+nix build --no-link ".#checks.$(nix config show system).microvm-host-holds-no-source"
 
 # Run the HM module composition smoke test
 nix-instantiate --eval tests/hmModules-composition.nix
