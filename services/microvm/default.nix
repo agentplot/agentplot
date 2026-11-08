@@ -57,8 +57,13 @@ in
           {
             imports = [ self.inputs.microvm.nixosModules.host ];
 
-            microvm.vms = lib.genAttrs guestNames (_: {
-              flake = self;
+            # Each guest is installed from its evaluated configuration, never
+            # `flake = self`: microvm.nix would write the flake's store path
+            # into the install unit, putting the consuming flake's whole source
+            # in this host's closure. checks.<system>.microvm-host-holds-no-source
+            # holds the role to this.
+            microvm.vms = lib.genAttrs guestNames (name: {
+              evaluatedConfig = self.nixosConfigurations.${name};
               autostart = true;
             });
 
