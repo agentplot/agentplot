@@ -168,6 +168,7 @@ Gno/qmd demonstrate declarative config generation — Nix writes a YAML/JSON con
 - Guests using llm-agents packages need `nixpkgs.overlays = [ inputs.llm-agents.overlays.default ]`
 - SSH host keys persist at `/persist/ssh-host-keys/` (virtiofs), NOT `/etc/ssh/` — `services.openssh.hostKeys` set by module
 - Age key pre-seeding: set `ageKeyFile` in guest settings to host-side sops-decrypted path; oneshot copies to `${persistDir}/sops-nix/key.txt` on first boot
+- The host role installs each guest from its evaluated configuration (`evaluatedConfig = self.nixosConfigurations.<guest>`), never `flake = self`: microvm.nix writes a flake's store path into `install-microvm-<guest>`, putting the consuming flake's whole source in every host's closure, so every landing releases every host. `checks.<system>.microvm-host-holds-no-source` fails the merge gate if the role ever does
 
 ### State
 - `config ? services.borgbackup` is always true (NixOS declares the option) — not a valid guard for conditional borgbackup config

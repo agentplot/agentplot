@@ -44,6 +44,7 @@ Each subdirectory with substantial conventions has its own CLAUDE.md — read it
 - `nixosModules.agentplot` / `darwinModules.agentplot` — HM delegation adapter
 - `packages.<system>.*` — standalone CLI packages (linkding-cli, miniflux-cli, paperless-cli)
 - `lib.mk*Dashboard` / `lib.mk*Inventory` — dashboard builders for cross-machine views
+- `checks.<system>.microvm-host-holds-no-source` — fails when the microvm host role installs a guest from a flake or its install unit refers to the flake's source (`tests/microvm-host-holds-no-source.nix`); `nix flake check`, the merge gate, runs it
 
 ## Related Repos
 
