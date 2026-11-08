@@ -41,6 +41,9 @@
       ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
       inherit (agentplot-kit.lib) mkClientTooling;
+
+      # Evaluated once, however many systems are checked.
+      microvmHostHoldsNoSource = import ./tests/microvm-host-holds-no-source.nix { inherit self; };
     in
     {
       clan.modules.atomic = import ./services/atomic { inherit mkClientTooling; };
@@ -120,5 +123,9 @@
           paperless-cli = pkgs.callPackage ./services/paperless/packages/paperless-cli { };
         }
       );
+
+      checks = forAllSystems (system: {
+        microvm-host-holds-no-source = microvmHostHoldsNoSource nixpkgs.legacyPackages.${system};
+      });
     };
 }
